@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include "pl.h"
 
 /**
@@ -238,6 +239,39 @@ void gestion_des_contraintes(Programme_Lineaire *p) {
         puts("");
     }
 }
+
+
+//Programme_Lineaire *pl_apartir_dun_fichier(const char *file) {
+//    FILE *f = fopen(file, "r");
+//    if(!f) {
+//        printf("Impossible d'ouvrir le fichier : %s !!!\n", file);
+//        exit(EXIT_FAILURE);
+//    }
+//
+//    //
+//    char type = getc(f);
+//
+//    char c = getc(f);
+//    if(c != ':') {
+//        printf("Erreur : ");
+//        return NULL;
+//    }
+//
+//    do{
+//        c = getc(f);
+//    }
+//    while( isspace(c) && c != EOF );
+//    if(c != '[') {
+//        printf("Erreur : ");
+//        return NULL;
+//    }
+//
+//    float x;
+//    fscanf(f, "%f", &x);
+//
+//    return NULL;
+//}
+
 
 void clean(Programme_Lineaire *p) {
     //Suppression du tableau contenant les contraintes.

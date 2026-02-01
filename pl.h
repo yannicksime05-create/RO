@@ -72,7 +72,7 @@ typedef struct Programme_Lineaire {
     char type;
 } Programme_Lineaire;
 
-Programme_Lineaire *pl_apartir_dun_fichier(FILE *f);
+Programme_Lineaire *pl_apartir_dun_fichier(const char *file);
 void gestion_du_type_de_pl(Programme_Lineaire *p);
 void gestion_de_la_fonction_objectif(Programme_Lineaire *p);
 void gestion_des_contraintes(Programme_Lineaire *p);
