@@ -360,11 +360,11 @@ void methode_du_simplexe(Programme_Lineaire *p) {
         //alors c'est une des variables de décisions qui entre dans la base.
         if(in_variable_index < p->columns) {
             //la longueur de 'solutions' est p->columns, or
-            // 0 <= out_variable_index <= p->columns + p->rows
+            // 0 <= out_variable_index <= p->columns + p->rows.
             //Pour un PL contenant donc plus de contraintes que de variables de décisions,
             //on ne peut pas utiliser directement out_variable_index,
             //on risquerait d'accéder à une zone qui n'est pas dans le tableau.
-            int pos = out_variable_index >= p->columns ? out_variable_index-1 : out_variable_index;
+            int pos = out_variable_index >= p->columns ? (out_variable_index+1) % p->columns : out_variable_index;
             solutions[pos] = (X) {out_variable_index, in_variable_index};
         }
 
@@ -419,10 +419,6 @@ void methode_du_simplexe(Programme_Lineaire *p) {
         printf("\t\tx%d = %.2f\n", solutions[i].column+1, (solutions[i].row < 0) ? 0.0f : b[solutions[i].row]);
     }
 
-//    for(int i = 0; i < p->columns; i++) {
-//        printf("solution[%d] = {%d, %d}\n", i+1, solutions[i].column, solutions[i].row);
-//    }
-
     z = NULL;
     contraintes = NULL;
     b = NULL;
@@ -430,7 +426,9 @@ void methode_du_simplexe(Programme_Lineaire *p) {
     free(solutions);
     solutions = NULL;
 
-    //
+    //Il y a de fortes chances pour que le programme se termine après la fin de cette fonction,
+    //on met donc à jour les valeurs de internes de columns et rows pour que le
+    //nettoyage du pl dans la mémoire soit fait correctement.
     p->columns = column;
     p->rows = row;
 
