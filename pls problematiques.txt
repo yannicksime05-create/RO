@@ -1,0 +1,38 @@
+//Ce fichier contient la liste de tous les pls qui ont conduit à une amélioration dans le code :
+
+Les 3 prochains pls ont conduit à ce que le code devienne :
+code:
+	int pos = out_variable_index >= p->columns ? (out_variable_index+1) % p->columns : out_variable_index;
+    solutions[pos] = (X) {out_variable_index, in_variable_index};
+
+au lieu de :
+	solutions[in_variable_index] = ...
+
+ou quoique ce soit d'autre, et à l'utilisation d'une fonction sort() pour classer les éléments.
+
+Le 1 a le problème suivant : à la 1ère itération, l'indice de la variable_entrante est plus grand que le nombre de solutions
+le 3 a le problème suivant : à la 1ère itération, x3 entre puis à la 3ème, x2 entre et vient remplacer x3
+
+1.
+Max z = 10 * x1 + 9 * x2
+s.a:
+	5 * x1 + 4 * x2 <= 200
+	4 * x1 + 6 * x2 <= 230
+	2 * x1 +     x2 <= 70
+	    x1, x2 >= 0  							Solution: (x1, x2, z) = (20, 25, 425)
+
+2.
+Max z = 300 * x1 + 250 * x2
+s.a:
+	    x1      <= 80
+	3 * x1      <= 150
+	2 * x1 + x2 <= 80
+	         x2 <= 35
+	    x1, x2 >= 0  							Solution: (x1, x2, z) = (22.5, 35, 15 500)
+
+3.
+Max z = 30 * x1 + 40 * x2 + 40 * x3
+s.a:
+	2 * x1 + 2 * x2 + 4 * x3 <= 22
+	         2 * x2 + 6 * x3 <= 20
+	2 * x1 + 3 * x2 + 6 * x3 <= 34
