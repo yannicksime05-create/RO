@@ -1,8 +1,6 @@
 #ifndef PL_H
 #define PL_H
 
-#include <stdio.h>
-
 /**
 *   Cette structure permet de représenter une contrainte dans un programme linéaire.
 */
