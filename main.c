@@ -43,8 +43,9 @@ int main(void) {
         affichage_du_pl(&primal);
 ////
 
-        transformation_avant_simplexe(&primal);
-        methode_du_simplexe(&primal);
+        methode_graphique(&primal);
+//        transformation_avant_simplexe(&primal);
+//        methode_du_simplexe(&primal);
 //        methode_du_simplexe();
 
 //        graphique(&primal);

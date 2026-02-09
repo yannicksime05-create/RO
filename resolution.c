@@ -5,46 +5,24 @@
 #include "resolution.h"
 
 /**
-*   \brief Cette fonction détermine et indique à l'utilisateur les points à tracer pour pouvoir résoudre son PL graphiquement.
-*   Cette fonction n'est donc dès lors qu'à utiliser lorsque le programme linéaire de l'utilisateur est de degré 2.
+*   @brief Cette fonction détermine et indique à l'utilisateur les points à tracer pour pouvoir résoudre son PL graphiquement.
+*   Cette fonction n'est donc à utiliser que lorsque le programme linéaire de l'utilisateur est de degré 2.
 *
 *   Soit à déterminer les points permettant de tracer la contrainte : c1 * x1 + c2 * x2 = b
 *
-*   Pour ce faire, il faut :
-*       - (dans un premier temps) remarquer que chaque coefficient (ci) de la contrainte permettra d'obtenir
-*           l'abscisse et l'ordonnée d'un point du plan (c'est plutôt évident);
+*   Pour ce faire, il faut remarquer que chaque coefficient (ci) de la contrainte permettra d'obtenir
+*   l'abscisse et l'ordonnée d'un des points cherchés;
 *
-*       - et enfin, constater que quelque soit les circonstances (ci est un diviseur de b ou pas), les
-*           coordonnées des points se trouvent à partir de la formule :      b = q * ci + r.
+*   Explication:
+*     Lorsqu'on essaie de déteminer x1 et x2 respectant la contrainte, le moyen le plus rapide est encore de mettre l'une
+*     des deux variables à 0 et déterminer la valeur de l'autre en faisant b / ci, ce qui permet d'obtenir les points
+*        - (0, b / ci) lorsque x1 = 0
+*        - (b / ci, 0) lorsque x2 = 0
 *
-*       Explication:
-*           Lorsqu'on essaie de déteminer x1 et x2 respectant la contrainte, le moyen le plus rapide est encore de mettre l'une
-*           des deux variables à 0 et déterminer la valeur de l'autre en faisant b / ci, ce qui permet d'obtenir les points
-*               - (0, b / ci) lorsque x1 = 0
-*               - (b / ci, 0) lorsque x2 = 0
+*   Le 'problème' avec ces points, c'est que si bi % ci != 0, on obtient un un point difficile à tracer.
+*   Cette fonction essaye donc de toujours trouver des points plus facilement réprésentables i.e. avec des coordonnées entières.
 *
-*           sauf que cette méthode coince si ci n'est pas un diviseur de b (notre but est d'obtenir des valeurs entières pour les coordonnées).
-*           Ex:
-*               x1 + 2 * x2 = 5. En appliquant la méthode précédente, on obtient les points :
-*               - (0, 5 / 2) et
-*               - (5, 0)
-*
-*               Le second point est bon (facilement représentable) mais pas le premier. À la place, on voudrait le point (1, 2) par exemple.
-*
-*           Pour résoudre ce 'problème', il suffit (encore une fois) d'appliquer la formule b = q * ci + r et de créer les points :
-*               - (q, r) lorsque i = 1
-*               - (r, q) lorsque i = 2
-*           Ex:
-*               x1 + 2 * x2 = 5 (l'exemple précédent).
-*               - i = 1 => ci = 1,
-*                   on a : 5 = 5 * 1 + 0        ce qui nous donne le point (5, 0)
-*
-*               - i = 2 => ci = 2
-*                   on a : 5 = 2 * 2 + 1        ce qui nous donne le point (1, 2)
-*
-*               Le point (0, 5 / 2) de l'approche précédente est remplacé par (1, 2) qui est bien plus facile à représenter dans un plan.
-*
-*   Cette solution en plus d'être simple résoud donc bien notre 'problème' :)
+*   Voici des exemples de résultats attendus par cette fonction :
 *
 *       Max Z = 2x1 + 3x2
 *       s.à     2x1 + x2 <= 4               (2, 0), (0, 4)
@@ -104,34 +82,105 @@
 *        -------------- ----------- -----------              -------------- ----------- -----------
 *
 *
-*   \param *p       L'adresse du programme linéaire afin de pouvoir accéder à toutes ses données.
+*   @param *p       L'adresse du programme linéaire afin de pouvoir accéder à toutes ses données.
 */
 void methode_graphique(Programme_Lineaire *p) {
     Point p1 = {0}, p2 = {0};
 
+//    Point points[2];
+
+
+    float cj;
     for(int i = 0; i < p->rows; i++) {
-        for(int j = 0; j < p->columns; j++) {
-            /*
-            *   j == 0, (coeffs[j] est le coefficient de x1).
-            */
-            if(j == 0) {
-                //FIXME!!! -x1 + x2 = 1     (1, 2) (0, 1)
-                p1.abs = (int) floor(p->b[i] / p->contraintes[i].coeffs[j]);
-                p1.ord = ((int) p->b[i]) % ((int) p->contraintes[i].coeffs[j]);
-            }
-            /*
-            *   j == 1, (coeffs[j] est le coefficient de x2).
-            */
-            else {
-                p2.ord = (int) floor(p->b[i] / p->contraintes[i].coeffs[j]);
-                p2.abs = ((int) p->b[i]) % ((int) p->contraintes[i].coeffs[j]);
-            }
+//        for(int j = 0; j < p->columns; j++) {
+//            cj = p->contraintes[i].coeffs[j];
+//
+//            if(cj < 0) {
+//                points[j].abs = (j == 0) ? 1 : (int) ( fabs(cj) + p->b[i] ) / p->contraintes[i].coeffs[0];
+//                points[j].ord = (j == 1) ? 1 : (int) ( fabs(cj) + p->b[i] ) / p->contraintes[i].coeffs[1];
+//            }
+//            else if(cj == 0.0f) {
+//                points[j].abs = 0;
+//                points[j].ord = 0;
+//            }
+//            else {
+//                points[j].abs = (j == 0) ? (int) floor(p->b[i] / cj) : ((int) p->b[i]) % ((int) cj);
+//                points[j].ord = (j == 1) ? (int) floor(p->b[i] / cj) : ((int) p->b[i]) % ((int) cj);
+//            }
+//        }
+
+
+
+
+        //La façon de trouver le point dépend grandement de la valeur du coefficient
+        //  - Si le coefficient est > 0, les coordonnées du point qu'il engendre se trouvent grâce à la formule : b = q * ci + r
+        //avec :
+        //  b, le coté droit de la contrainte,
+        //  q, le quotient de la division entière,
+        //  ci, le coefficient i de la contrainte,
+        //  r, le reste de la division.
+        //Et les points cherchés sont :
+        //  P1(q, r) lorsque le coefficient est celui de x1,
+        //  P2(r, q) lorsque le coefficient est celui de x2.
+        //
+        //Ex:   3x1 + x2 <= 5
+        //  En utilisant le coeff de x1, on a : 5 = 1 * 3 + 2 => P1(1, 2)
+        //  En utilisant le coeff de x2, on a : 5 = 5 * 1 + 0 => P2(0, 5)
+        //
+        //
+        //  - Si le coefficient est nul, (dans ce cas le second coefficient est obligatoirement non nul sinon, la contrainte
+        //elle-meme n'existe pas), l'un des deux points pour tracer la contrainte est alors le point O(0, 0).
+        //Et le second point se trouve soit en allant au 1er cas (ci-dessus), soit en allant au 3ème cas (ci-dessous).
+        //
+        //Ex:   0 * x1 + x2 <= 2
+        //  Le coefficient de x1 est nul donc on a le point P1 = O(0, 0),
+        //  Le coefficient de x2 est positif donc on applique le 1er cas :
+        //      2 = 2 * 1 + 0 => P2(0, 2).
+        //
+        //  Beaucoup de bavardages pour rien sur ce deuxième cas (en vrai, tout ça pour un truc comme : x2 <= 2, sérieux ?!),
+        //mais étant donné que je suis en train de documenter tous les cas, il fallait mentionner également celui-ci.
+        //
+        //
+        //  - Si le coefficient est < 0, (probablement le cas le plus difficile)
+        cj = p->contraintes[i].coeffs[0];
+        if(cj > 0) {
+            p1.abs = (int) floor(p->b[i] / cj);
+            p1.ord = ((int) p->b[i]) % ((int) cj);
+        }
+        else if(!cj) {
+            p1.abs = 0;
+            p1.ord = 0;
+        }
+        else {
+//            p1.abs = 1;
+//            p1.ord = (int) ( fabs(cj) + p->b[i] ) / p->contraintes[i].coeffs[1];
+
+            p1.abs = (int) ( p->b[i] * p->contraintes[i].coeffs[1] - p->b[i] );
+            p1.ord = (int) p->b[i];
+        }
+
+
+        cj = p->contraintes[i].coeffs[1];
+        if(cj > 0) {
+            p2.abs = ((int) p->b[i]) % ((int) cj);
+            p2.ord = (int) floor(p->b[i] / cj);
+        }
+        else if(!cj) {
+            p2.abs = 0;
+            p2.ord = 0;
+        }
+        else {
+//            p2.abs = (int) ( fabs(cj) + p->b[i] ) / p->contraintes[i].coeffs[0];
+//            p2.ord = 1;
+
+            p2.abs = (int) p->b[i];
+            p2.ord = (int) ( p->b[i] * p->contraintes[i].coeffs[0] - p->b[i] );
         }
 
         //À ce niveau on connait déjà tous les points utiles pour tracer la contrainte. Il ne reste donc plus qu'à les afficher.
         printf("Pour la contrainte %d, tracez les points :\n", i+1);
-        printf("\t\tx1 = %d, x2 = %d\n", p1.abs, p1.ord);
-        printf("\t\tx1 = %d, x2 = %d\n", p2.abs, p2.ord);
+        printf("\t\tP1 (%d, %d)\n", p1.abs, p1.ord);
+        printf("\t\tP2 (%d, %d)\n", p2.abs, p2.ord);
     }
 }
 
