@@ -222,15 +222,6 @@ int min(const float *b, const int size) {
     return l;
 }
 
-void transformation_avant_simplexe(Programme_Lineaire *p) {
-    if(p->type == 'M') {
-        for(int i = 0; i < p->columns; i++)
-            p->objectif[i] *= -1;
-
-        return;
-    }
-}
-
 /**
 *   Cette fonction sert de condition d'arrêt à la fois pour la méthode du simplexe et pour la méthode duale du simplexe.
 *
@@ -246,49 +237,6 @@ bool condition_arret(const float *arr, const int size) {
     }
 
     return true;
-}
-
-//int indice_variable_sortante_simplexe(int row, int column, float *b, float contraintes[row][column], int in_variable_index) {
-//    float ratio = 0.0f, min_ratio = -1.0f;
-//    int index = 0;
-//
-////    for(int i = 0; i < row; ++i) {
-////        ratio = b[i] / contraintes[i][in_variable_index];
-////
-////        if(ratio >= 0) {
-////            if(min_ratio < 0 || ratio < min_ratio) {
-////                min_ratio = ratio;
-////                index = i;
-////            }
-////        }
-////    }
-//
-//    for(int i = 0; i < row; ++i) {
-//        ratio = b[i] / contraintes[i][in_variable_index];
-//        if( ratio >= 0 && (min_ratio < 0 || ratio < min_ratio) ) {
-//            min_ratio = ratio;
-//            index = i;
-//        }
-//    }
-//
-//    return index;
-//}
-//
-
-
-int indice_variable_sortante_simplexe(const float *b, const Contrainte *contraintes, const int row, const int in_variable_index) {
-    float ratio = 0.0f, min_ratio = -1.0f;
-    int index = 0;
-
-    for(int i = 0; i < row; ++i) {
-        ratio = b[i] / contraintes[i].coeffs[in_variable_index];
-        if( ratio >= 0 && (min_ratio < 0 || ratio < min_ratio) ) {
-            min_ratio = ratio;
-            index = i;
-        }
-    }
-
-    return index;
 }
 
 /**
@@ -361,19 +309,57 @@ void changement_de_base(Programme_Lineaire *p, X *solutions, int in_variable_ind
     contraintes = NULL;
 }
 
+void transformation_avant_simplexe(Programme_Lineaire *p) {
+    short n_columns_to_add = 0;
+    for(int i = 0; i < p->rows; i++) {
+        if(p->contraintes[i].type == '>') n_columns_to_add += 2;
+        else ++n_columns_to_add;
+    }
+    size_t total_of_columns = p->columns + n_columns_to_add;
+
+    p->objectif = (float *) realloc(p->objectif, total_of_columns);
+    if(p->type == 'M') {
+        for(int i = p->columns; i < total_of_columns; ++i)
+            p->objectif[i] = 0.0f;
+    }
+
+    for(int i = 0; i < p->rows; ++i) {
+        p->contraintes[i].coeffs = (float *) realloc(p->contraintes[i].coeffs, total_of_columns);
+
+        if(p->contraintes[i].type == '<') {
+            for(int j = p->columns; j < total_of_columns; ++j) {
+                p->contraintes[i].coeffs[j] = (j == i+p->columns) ? 1.0f : 0.0f;
+            }
+        }
+    }
+
+    if(p->type == 'M') {
+        for(int i = 0; i < p->columns; i++)
+            p->objectif[i] *= -1;
+    }
+}
+
+int indice_variable_sortante_simplexe(const float *b, const Contrainte *contraintes, const int row, const int in_variable_index) {
+    float ratio = 0.0f, min_ratio = -1.0f;
+    int index = 0;
+
+    for(int i = 0; i < row; ++i) {
+        ratio = b[i] / contraintes[i].coeffs[in_variable_index];
+        if( ratio >= 0 && (min_ratio < 0 || ratio < min_ratio) ) {
+            min_ratio = ratio;
+            index = i;
+        }
+    }
+
+    return index;
+}
+
+/**
+*/
 void methode_du_simplexe(Programme_Lineaire *p) {
     int row = p->rows, column = p->columns + p->rows;
 
-    p->objectif = (float *) realloc(p->objectif, column);
-    for(int i = p->columns; i < column; ++i) p->objectif[i] = 0.0f;
-
-    for(int i = 0; i < p->rows; ++i) {
-        p->contraintes[i].coeffs = (float *) realloc(p->contraintes[i].coeffs, column);
-
-        for(int j = p->columns; j < column; ++j) {
-            p->contraintes[i].coeffs[j] = (j == i+p->columns) ? 1.0f : 0.0f;
-        }
-    }
+    transformation_avant_simplexe(p);
 
     //le nombre de x que l'on souhaite est égal au nombre de variable de décisions du problème donc : p->columns au lieu de column.
     X *solutions = malloc(p->columns * sizeof(X));
@@ -416,33 +402,74 @@ void methode_du_simplexe(Programme_Lineaire *p) {
 
 }
 
+void transformation_avant_dual_simplexe(Programme_Lineaire *p) {
+    for(int i = 0; i < p->rows; i++) {
+        if(p->contraintes[i].type == '>') {
+            for(int j = 0; i < p->columns; j++)
+                p->contraintes[i].coeffs[j] *= -1;
+        }
+        else if(p->contraintes[i].type == '=') {
 
-//int indice_variable_entrante_dual_du_simplexe(const Programme_Lineaire *p, const int out_variable_index) {
-//    int index = 0;
-//    float cj, arj, ratio, min_ratio = -1.0f;
+
+        }
+    }
+
+}
+
+
+int indice_variable_entrante_dual_du_simplexe(const Programme_Lineaire *p, const int out_variable_index) {
+    int index = 0;
+    float cj, arj, ratio, min_ratio = -1.0f;
+    for(int i = 0; i < p->columns; i++) {
+        cj = p->objectif[i];
+        //si ce coefficient est 0, alors il appartient à une variable qui est dans la base.
+        if(cj == 0) continue;
+
+        arj = p->contraintes[out_variable_index].coeffs[i];
+        if(arj >= 0) continue;
+
+        ratio = fabs(cj / arj);
+        if(min_ratio < 0 || ratio < min_ratio) {
+            min_ratio = ratio;
+            index = i;
+        }
+    }
+
 //    for(int i = 0; i < p->columns; i++) {
 //        cj = p->objectif[i];
+//        arj = p->contraintes[out_variable_index].coeffs[i];
+//        ratio = fabs(cj / arj);
+//
+//        if(cj != 0 && arj < 0 && (min_ratio < 0 || ratio < min_ratio)) {
+//            min_ratio = ratio;
+//            index = i;
+//        }
+//    }
+
+    return index;
+}
+
+//int indice_variable_entrante_dual_du_simplexe(const float *z, const int row, const int column, const float contraintes[row][column], const int out_variable_index) {
+//    int index = 0;
+//    float cj, arj, ratio, min_ratio = -1.0f;
+//    for(int i = 0; i < column; i++) {
+//        cj = z[i];
 //        //si ce coefficient est 0, alors il appartient à une variable qui est dans la base.
 //        if(cj == 0) continue;
 //
-//        arj = p->contraintes[out_variable_index].coeffs[i];
+//        arj = contraintes[out_variable_index][i];
 //        if(arj >= 0) continue;
 //
 //        ratio = fabs(cj / arj);
-//        if(min_ratio < 0) {
-//            min_ratio = ratio;
-//            continue;
-//        }
-//
-//        if(ratio < min_ratio) {
+//        if(min_ratio < 0 || ratio < min_ratio) {
 //            min_ratio = ratio;
 //            index = i;
 //        }
 //    }
 //
-////    for(int i = 0; i < p->columns; i++) {
-////        cj = p->objectif[i];
-////        arj = p->contraintes[out_variable_index].coeffs[i];
+////    for(int i = 0; i < column; i++) {
+////        cj = z[i];
+////        arj = contraintes[out_variable_index][i];
 ////        ratio = fabs(cj / arj);
 ////
 ////        if(cj != 0 && arj < 0 && (min_ratio < 0 || ratio < min_ratio)) {
@@ -454,46 +481,34 @@ void methode_du_simplexe(Programme_Lineaire *p) {
 //    return index;
 //}
 
-//void transformation_avant_dual_simplexe(Programme_Lineaire *p) {
-//    for(int i = 0; i < p->rows; i++) {
-//        if(p->contraintes[i].type == '>') {
-//            for(int j = 0; i < p->columns; j++)
-//                p->contraintes[i].coeffs[j] *= -1;
-//        }
-//        else if(p->contraintes[i].type == '=') {
-//
-//
-//        }
-//    }
-//
-//}
-
 //void methode_duale_du_simplexe() {
-//    int rows = 2, column = 5;
-//    float z[column] = {3.0f, 4.0f, 5.0f, 0.0f, 0.0f};
+//    int row = 2, column = 5;
+//    float z[5] = {3.0f, 4.0f, 5.0f, 0.0f, 0.0f};
 //
-//    float contraintes[rows][column] = {
+//    float contraintes[2][5] = {
 //        {-1.0f, -2.0f, -3.0f, 1.0f, 0.0f},
 //        {-2.0f, -2.0f, -1.0f, 0.0f, 1.0f}
 //    };
 //
-//    float b[rows] = {-5.0f, -6.0f};
+//    float b[2] = {-5.0f, -6.0f};
 //
-//        //le nombre de x que l'on souhaite est égal au nombre de variable de décisions du problème donc : p->columns au lieu de column.
+//    //le nombre de x que l'on souhaite est égal au nombre de variable de décisions du problème donc : p->columns au lieu de column.
 //    X *solutions = malloc(3 * sizeof(X));
 //    if(!solutions) {
 //        printf("Error: Couldn't create the array of solutions!\n");
 //        return;
 //    }
 //
-//    for(int i = 0; i < rows; i++) {
+//    for(int i = 0; i < row; i++) {
 //        solutions[i].row = solutions[i].column = -1;
 //    }
 //
 //    int iteration = 1;
 //    do{
-//        int out_variable_index = min(b, rows);
-//        int in_variable_index = indice_variable_entrante_dual_du_simplexe(p, out_variable_index);
+//        printf("\n\tIteration %d :\n", iteration);
+//
+//        int out_variable_index = min(b, row);
+//        int in_variable_index = indice_variable_entrante_dual_du_simplexe(z, row, column, contraintes, out_variable_index);
 //
 ////        changement_de_base(p, solutions, in_variable_index, out_variable_index, row, column);
 //
@@ -524,7 +539,7 @@ void methode_du_simplexe(Programme_Lineaire *p) {
 //        }
 //
 //        printf("\t\tp-row devient : ");
-//        for(int i = 0; i < column; ++i) printf("%5.2f, ", contraintes[out_variable_index].coeffs[i]);
+//        for(int i = 0; i < column; ++i) printf("%5.2f, ", contraintes[out_variable_index][i]);
 //        printf("\n");
 //        printf("\t\tz-row devient : ");
 //        for(int i = 0; i < column; ++i)  printf("%5.2f, ", z[i]);
@@ -534,10 +549,10 @@ void methode_du_simplexe(Programme_Lineaire *p) {
 //        for(int i = 0; i < row; ++i) {
 //            if(i == out_variable_index) continue;
 //
-//            column_coeff = contraintes[i].coeffs[in_variable_index];
+//            column_coeff = contraintes[i][in_variable_index];
 //            b[i] -= column_coeff * b[out_variable_index];
 //            for(int j = 0; j < column; ++j)
-//                contraintes[i].coeffs[j] -= column_coeff * contraintes[out_variable_index].coeffs[j];
+//                contraintes[i][j] -= column_coeff * contraintes[out_variable_index][j];
 //        }
 //
 //        printf("\t\tles contraintes deviennent :\n");
@@ -545,7 +560,7 @@ void methode_du_simplexe(Programme_Lineaire *p) {
 //            if(i == out_variable_index) continue;
 //
 //            printf("\t\t\t\t");
-//            for(int j = 0; j < column; ++j) printf("%5.2f, ", contraintes[i].coeffs[j]);
+//            for(int j = 0; j < column; ++j) printf("%5.2f, ", contraintes[i][j]);
 //            printf("\n");
 //        }
 //
@@ -556,8 +571,9 @@ void methode_du_simplexe(Programme_Lineaire *p) {
 //        ++iteration;
 //    }while( !condition_arret(b, 2) );
 //
+////    sort(solutions, 3);
 //    printf("\n\tLes solutions sont :\n");
-//    for(int i = 0; i < columns; i++) {
+//    for(int i = 0; i < 3; i++) {
 //        printf("\t\tx%d = %.2f\n", solutions[i].column+1, (solutions[i].row < 0) ? 0.0f : b[solutions[i].row]);
 //    }
 //
@@ -566,24 +582,37 @@ void methode_du_simplexe(Programme_Lineaire *p) {
 //}
 
 //void methode_duale_du_simplexe(Programme_Lineaire *p) {
-//    int rows = 2, column = 5;
-//    float z[column] = {3.0f, 4.0f, 5.0f, 0.0f, 0.0f};
+////    int rows = 2, column = 5;
 //
-//    float contraintes[rows][column] = {
-//        {-1.0f, -2.0f, -3.0f, 1.0f, 0.0f},
-//        {-2.0f, -2.0f, -1.0f, 0.0f, 1.0f}
-//    };
+//    transformation_avant_dual_simplexe(p);
+
+//    //le nombre de x que l'on souhaite est égal au nombre de variable de décisions du problème donc : p->columns au lieu de column.
+//    X *solutions = malloc(p->columns * sizeof(X));
+//    if(!solutions) {
+//        printf("Error: Couldn't create the array of solutions!\n");
+//        return;
+//    }
 //
-//    float b[rows] = {-5.0f, -6.0f};
+//    for(int i = 0; i < p->columns; i++) {
+//        solutions[i].row = solutions[i].column = -1;
+//    }
 //
 //    int iteration = 1;
 //    do{
-//        int out_variable_index = min(b, rows);
+//        int out_variable_index = min(p->b, rows);
 //        int in_variable_index = indice_variable_entrante_dual_du_simplexe(p, out_variable_index);
 //
 //        changement_de_base(p, solutions, in_variable_index, out_variable_index, row, column);
 //
 //        ++iteration;
 //    }while( !condition_arret(b, 2) );
+//
+//    printf("\n\tLes solutions sont :\n");
+//    for(int i = 0; i < p->columns; i++) {
+//        printf("\t\tx%d = %.2f\n", solutions[i].column+1, (solutions[i].row < 0) ? 0.0f : p->b[solutions[i].row]);
+//    }
+//
+//    free(solutions);
+//    solutions = NULL;
 //
 //}
