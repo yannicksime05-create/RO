@@ -38,8 +38,8 @@ void transformation_avant_simplexe(Programme_Lineaire *p);
 void methode_du_simplexe(Programme_Lineaire *p);
 //void methode_du_simplexe();
 
-//void transformation_avant_dual_simplexe(Programme_Lineaire *p);
+void transformation_avant_dual_simplexe(Programme_Lineaire *p);
 ////void methode_duale_du_simplexe(Programme_Lineaire *p);
-//void methode_duale_du_simplexe();
+void methode_duale_du_simplexe();
 
 #endif // RESOLUTION_H

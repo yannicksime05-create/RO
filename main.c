@@ -44,9 +44,10 @@ int main(void) {
 ////
 
         methode_graphique(&primal);
-//        transformation_avant_simplexe(&primal);
 //        methode_du_simplexe(&primal);
 //        methode_du_simplexe();
+//        methode_duale_du_simplexe(&primal);
+//        methode_duale_du_simplexe();
 
 //        graphique(&primal);
 

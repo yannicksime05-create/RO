@@ -144,8 +144,12 @@ void methode_graphique(Programme_Lineaire *p) {
         //  - Si le coefficient est < 0, (probablement le cas le plus difficile)
         cj = p->contraintes[i].coeffs[0];
         if(cj > 0) {
-            p1.abs = (int) floor(p->b[i] / cj);
             p1.ord = ((int) p->b[i]) % ((int) cj);
+
+            //Solution possiblement temporaire
+            p1.abs = (int) floor((p->b[i] - p->contraintes[i].coeffs[1] * p1.ord) / cj);
+
+//            p1.abs = (int) floor(p->b[i] / cj);
         }
         else if(!cj) {
             p1.abs = 0;
@@ -163,7 +167,11 @@ void methode_graphique(Programme_Lineaire *p) {
         cj = p->contraintes[i].coeffs[1];
         if(cj > 0) {
             p2.abs = ((int) p->b[i]) % ((int) cj);
-            p2.ord = (int) floor(p->b[i] / cj);
+
+            //Solution possiblement temporaire
+            p2.ord = (int) floor((p->b[i] - p->contraintes[i].coeffs[0] * p2.abs) / cj);
+
+//            p2.ord = (int) floor(p->b[i] / cj);
         }
         else if(!cj) {
             p2.abs = 0;
@@ -385,7 +393,7 @@ void methode_du_simplexe(Programme_Lineaire *p) {
         ++iteration;
     }while( !condition_arret(p->objectif, column) );
 
-    sort(solutions, p->columns);
+//    sort(solutions, p->columns);
     printf("\n\tLes solutions sont :\n");
     for(int i = 0; i < p->columns; i++) {
         printf("\t\tx%d = %.2f\n", solutions[i].column+1, (solutions[i].row < 0) ? 0.0f : p->b[solutions[i].row]);
