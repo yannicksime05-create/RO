@@ -43,8 +43,8 @@ int main(void) {
         affichage_du_pl(&primal);
 ////
 
-        methode_graphique(&primal);
-//        methode_du_simplexe(&primal);
+//        methode_graphique(&primal);
+        methode_du_simplexe(&primal);
 //        methode_du_simplexe();
 //        methode_duale_du_simplexe(&primal);
 //        methode_duale_du_simplexe();

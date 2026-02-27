@@ -6,8 +6,8 @@
 /**
 *   Affiche le 'message' demandant à l'utilisateur de saisir un entier et renvoie l'entier saisi.
 *
-*   \param message          Le message (demandant la valeur) à afficher.
-*   \return                 L'entier entré par l'utilisateur.
+*   @param message          Le message (demandant la valeur) à afficher.
+*   @return                 L'entier entré par l'utilisateur.
 */
 int int_input(const char *message) {
     int i;
@@ -20,10 +20,10 @@ int int_input(const char *message) {
 /**
 *   Affiche le 'message' demandant à l'utilisateur de saisir un réel et renvoie le réél saisi.
 *
-*   \param message          Le message (demandant la valeur) à afficher.
-*   \param pos
-*   \return                 Le réel entré par l'utilisateur.
-*   \sa int_input
+*   @param message          Le message (demandant la valeur) à afficher.
+*   @param pos
+*   @return                 Le réel entré par l'utilisateur.
+*   @sa int_input
 */
 float float_input(const char *message, int pos) {
     float f;
@@ -37,8 +37,8 @@ float float_input(const char *message, int pos) {
 /**
 *   Affiche le 'message' demandant à l'utilisateur de saisir un caractère et renvoie le caractère saisi.
 *
-*   \param message
-*   \return                 Le caractère saisi par l'utilisateur.
+*   @param message
+*   @return                 Le caractère saisi par l'utilisateur.
 */
 char char_input(const char *message) {
     char c;
@@ -53,7 +53,7 @@ char char_input(const char *message) {
 /**
 *   Cette fonction demande à l'utilisateur le nombre de variables de décisions que possède son programme et nous le renvoie.
 *
-*   \return n           Le nombre de variables de décisons.
+*   @return n           Le nombre de variables de décisons.
 */
 int nvd() {
     int n;
@@ -68,8 +68,8 @@ int nvd() {
 /**
 *   Cette fonction se charge de créer le tableau contenant les coefficients de la fonction objectif et de les récupérer.
 *
-*   \param  n         Le nombre de coefficients de la fonction objectif.
-*   \return           Le tableau contenant les coefficients de la fonction objectif.
+*   @param  n         Le nombre de coefficients de la fonction objectif.
+*   @return           Le tableau contenant les coefficients de la fonction objectif.
 */
 float *ocoeffs(int n) {
     puts("\n\t-----------------");
@@ -99,7 +99,7 @@ void affichage_des_contraintes(const Programme_Lineaire *p) {
         for(int j = 0; j < p->columns; ++j) {
             printf("%f * x%d", p->contraintes[i].coeffs[j], j+1);
             if(j < p->columns-1)
-            printf(" + ");
+                printf(" + ");
         }
         printf(" %c %f", p->contraintes[i].type, p->b[i]);
         printf("\n");
