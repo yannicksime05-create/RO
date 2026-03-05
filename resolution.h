@@ -4,7 +4,7 @@
 #include "pl.h"
 
 /**
-*   \brief Cette structure permet de représenter un point dans un repère orthonormé (O, x, y).
+*   @brief Cette structure permet de représenter un point dans un repère orthonormé (O, x, y).
 *   Elle est notamment destinée à être utilisée lorsque l'utilisateur choisi l'option graphique pour résoudre son programme.
 *   Ses champs sont de type entier car l'algorithme qui donne les points essayera de toujours renvoyer des valeurs de ce type.
 */
@@ -33,13 +33,11 @@ typedef struct X {
 //    float value;
 } X;
 
-void methode_graphique(Programme_Lineaire *p);
+void methode_graphique(const Programme_Lineaire *p);
 void transformation_avant_simplexe(Programme_Lineaire *p);
 void methode_du_simplexe(Programme_Lineaire *p);
-//void methode_du_simplexe();
 
 void transformation_avant_dual_simplexe(Programme_Lineaire *p);
-////void methode_duale_du_simplexe(Programme_Lineaire *p);
-void methode_duale_du_simplexe();
+void methode_duale_du_simplexe(Programme_Lineaire *p);
 
 #endif // RESOLUTION_H

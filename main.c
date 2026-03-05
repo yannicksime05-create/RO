@@ -8,8 +8,11 @@ bool start() {
     puts("\n\t\t\tSalut, je m'appelle sky, votre Assistant de Resolution de Programme Lineaire (ARPL)");
     puts("\n\tAvant de continuer, petite information :");
     puts("\n\t\t1. Je ne vous demanderai pas de contraintes sur les variables car j'ai ete programme pour supposer qu'elles sont toujours toutes soumises à des contraintes de non-negativite.");
-    printf("\n\tSi cela est clair, pouvons nous continuer ? y (Oui) / n (Non) : ");
-    scanf("%c", &c);
+    do{
+        printf("\n\tSi cela est clair, pouvons nous continuer ? y (Oui) / n (Non) : ");
+        scanf("%c", &c);
+        if(c == '\n') c = 'y';
+    }while(c != 'y');
 
     return c == 'y';
 }
@@ -45,9 +48,7 @@ int main(void) {
 
 //        methode_graphique(&primal);
         methode_du_simplexe(&primal);
-//        methode_du_simplexe();
 //        methode_duale_du_simplexe(&primal);
-//        methode_duale_du_simplexe();
 
 //        graphique(&primal);
 

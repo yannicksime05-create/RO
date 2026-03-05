@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <ctype.h>
+//#include <ctype.h>
 #include "pl.h"
 
 /**
@@ -178,7 +178,7 @@ void gestion_des_contraintes(Programme_Lineaire *p) {
     //Création du tableau devant contenir le coté droit des contraintes.
     p->b = (float *) calloc(p->rows, sizeof(float));
 
-    char cb_ok;
+    char cb_ok, ct;
     short option;
     int j;
     //Récupération des coefficients des contraintes du problème.
@@ -192,7 +192,14 @@ void gestion_des_contraintes(Programme_Lineaire *p) {
             scanf("%f", &p->contraintes[i].coeffs[j]);
         }
 
-        p->contraintes[i].type = char_input("\t\tVeuillez entrer le type de la contrainte (<, >, =) : ");
+        ct = char_input("\t\tVeuillez entrer le type de la contrainte (<, >, =) : ");
+        if(ct == '\n')
+            p->contraintes[i].type = '<';
+        else
+            p->contraintes[i].type = ct;
+
+
+
         p->b[i] = float_input("\t\tVeuillez entrer le cote droit de la contrainte %d : ", i+1);
         printf("\n");
 
