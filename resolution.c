@@ -316,6 +316,18 @@ void changement_de_base(Programme_Lineaire *p, X *solutions, const int in_variab
 }
 
 
+//void forme_standard_simplexe(Programme_Lineaire *p, const int i, int *n_columns_to_add) {
+//    if(p->contraintes[i].type == '<') {
+//        p->contraintes[i].type = '=';
+//        return 1;
+//    }
+//    else if(p->contraintes[i].type == '=') {
+//        return 1;
+//    }
+//    else {
+//
+//    }
+//}
 
 void transformation_avant_simplexe(Programme_Lineaire *p) {
     short n_columns_to_add = 0;
@@ -410,17 +422,11 @@ void methode_du_simplexe(Programme_Lineaire *p) {
     free(solutions);
     solutions = NULL;
 
-    //Il y a de fortes chances pour que le programme se termine après la fin de cette fonction,
-    //on met donc à jour les valeurs de internes de columns et rows pour que le
-    //nettoyage du pl dans la mémoire soit fait correctement.
-//    p->columns = column;
-//    p->rows = row;
-
 }
 
 
 
-void forme_standard_dual_simplexe(Programme_Lineaire *p, const int i, int *n_columns_to_add) {
+int forme_standard_dual_simplexe(Programme_Lineaire *p, const int i) {
     if(p->contraintes[i].type == '>') {
         p->contraintes[i].type = '<';
         p->b[i] *= -1;
@@ -429,7 +435,6 @@ void forme_standard_dual_simplexe(Programme_Lineaire *p, const int i, int *n_col
     }
     else if(p->contraintes[i].type == '=') {
         p->rows++;
-        *n_columns_to_add += 2;
         p->contraintes = (Contrainte *) realloc(p->contraintes, p->rows);
         if(!p->contraintes) {
             printf("Impossible d'ajouter la nouvelle contrainte !");
@@ -440,20 +445,19 @@ void forme_standard_dual_simplexe(Programme_Lineaire *p, const int i, int *n_col
         p->contraintes[p->rows-1].type = '>';
         for(int j = 0; j < p->columns; j++)
             p->contraintes[p->rows-1].coeffs[j] = p->contraintes[i].coeffs[j];
-
-        return;
     }
     else {
         p->contraintes[i].type = '=';
+        return 1;
     }
 
-    *n_columns_to_add++;
+    return 0;
 }
 
 void transformation_avant_dual_simplexe(Programme_Lineaire *p) {
     int i = 0, n_columns_to_add = 0;
     while(i < p->rows) {
-        forme_standard_dual_simplexe(p, i, &n_columns_to_add);
+        n_columns_to_add += forme_standard_dual_simplexe(p, i);
         if(p->contraintes[i].type == '=') ++i;
     }
 
@@ -544,7 +548,7 @@ void methode_duale_du_simplexe(Programme_Lineaire *p) {
     }while( !condition_arret(p->b, p->rows) );
 
     printf("\n\tLes solutions sont :\n");
-    for(int i = 0; i < p->columns; i++) {
+    for(int i = 0; i < old_ncolumns; i++) {
         printf("\t\tx%d = %.2f\n", solutions[i].column+1, (solutions[i].row < 0) ? 0.0f : p->b[solutions[i].row]);
     }
 
