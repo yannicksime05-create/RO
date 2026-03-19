@@ -316,17 +316,14 @@ void changement_de_base(Programme_Lineaire *p, X *solutions, const int in_variab
 }
 
 
-//void forme_standard_simplexe(Programme_Lineaire *p, const int i, int *n_columns_to_add) {
-//    if(p->contraintes[i].type == '<') {
+//int forme_standard_simplexe(Programme_Lineaire *p, const int i) {
+//    if(p->contraintes[i].type == '>') {
 //        p->contraintes[i].type = '=';
-//        return 1;
+//        return 2;
 //    }
-//    else if(p->contraintes[i].type == '=') {
-//        return 1;
-//    }
-//    else {
+//    else p->contraintes[i].type = '=';
 //
-//    }
+//    return 1;
 //}
 
 void transformation_avant_simplexe(Programme_Lineaire *p) {
@@ -336,6 +333,12 @@ void transformation_avant_simplexe(Programme_Lineaire *p) {
         else ++n_columns_to_add;
     }
     size_t total_of_columns = p->columns + n_columns_to_add;
+
+//    int i = 0, n_colums_to_add = 0;
+//    while(i < p->rows) {
+//        n_columns_to_add += forme_standard_simplexe(p, i);
+//        if(p->contraintes[i].type == '=') ++i;
+//    }
 
     p->objectif = (float *) realloc(p->objectif, total_of_columns);
     if(!p->objectif) {
@@ -547,6 +550,7 @@ void methode_duale_du_simplexe(Programme_Lineaire *p) {
         ++iteration;
     }while( !condition_arret(p->b, p->rows) );
 
+//    sort(solutions, old_ncolumns);
     printf("\n\tLes solutions sont :\n");
     for(int i = 0; i < old_ncolumns; i++) {
         printf("\t\tx%d = %.2f\n", solutions[i].column+1, (solutions[i].row < 0) ? 0.0f : p->b[solutions[i].row]);

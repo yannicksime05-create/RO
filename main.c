@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <stdbool.h>
+#include <time.h>
+#include <string.h>
 #include "pl.h"
 #include "resolution.h"
 
@@ -15,6 +17,12 @@ bool start() {
     }while(c != 'y');
 
     return c == 'y';
+}
+
+char *remove_newline(char *s) {
+    s[strcspn(s, "\n")] = 0;
+
+    return s;
 }
 
 
@@ -34,6 +42,9 @@ int main(void) {
         puts("\n");
         Programme_Lineaire primal = { 0 };
 
+        time_t start1;
+        time(&start1);
+
         gestion_du_type_de_pl(&primal);
         printf("\tVous souhaitez donc resoudre un probleme de %s.\n", (primal.type == 'm') ? "minimisation" : "Maximisation");
 
@@ -41,14 +52,27 @@ int main(void) {
         puts("\n\n\t-----------------");
 
         gestion_des_contraintes(&primal);
-        //puts("\n\t-----------------");
+
+        time_t end1 = time(NULL);
+
         puts("\n\n\tVous souhaitez donc resoudre le PL suivant :");
         affichage_du_pl(&primal);
-////
+
+        time_t start2;
+        time(&start2);
 
 //        methode_graphique(&primal);
         methode_du_simplexe(&primal);
 //        methode_duale_du_simplexe(&primal);
+
+        time_t end2;
+        time(&end2);
+
+        printf("\n\tLa recuperation des valeurs a commence a : %s.\n", remove_newline(ctime(&start1)));
+        printf("\tElle s'est termine a : %s, et a dure : %.2lfs.\n", remove_newline(ctime(&end1)), difftime(end1, start1));
+        printf("\n\tLa resolution a commence a : %s.\n", remove_newline(ctime(&start2)));
+        printf("\tElle s'est termine a : %s, et a dure : %.2lfs.\n", remove_newline(ctime(&end2)), difftime(end2, start2));
+
 
 //        graphique(&primal);
 
