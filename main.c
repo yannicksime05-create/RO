@@ -19,10 +19,14 @@ bool start() {
     return c == 'y';
 }
 
-char *remove_newline(char *s) {
-    s[strcspn(s, "\n")] = 0;
+//char *remove_newline(char *s) {
+//    s[strcspn(s, "\n")] = 0;
+//
+//    return s;
+//}
 
-    return s;
+double convert_to_seconds(const clock_t end, const clock_t start) {
+   return ( (double) (end - start) ) / CLOCKS_PER_SEC;
 }
 
 
@@ -42,36 +46,36 @@ int main(void) {
         puts("\n");
         Programme_Lineaire primal = { 0 };
 
-        time_t start1;
-        time(&start1);
+        clock_t input_start, input_end;
+        input_start = clock();
 
         gestion_du_type_de_pl(&primal);
         printf("\tVous souhaitez donc resoudre un probleme de %s.\n", (primal.type == 'm') ? "minimisation" : "Maximisation");
-
         gestion_de_la_fonction_objectif(&primal);
         puts("\n\n\t-----------------");
-
         gestion_des_contraintes(&primal);
 
-        time_t end1 = time(NULL);
+        input_end = clock();
 
         puts("\n\n\tVous souhaitez donc resoudre le PL suivant :");
         affichage_du_pl(&primal);
 
-        time_t start2;
-        time(&start2);
+        clock_t resolution_start, resolution_end;
+        resolution_start = clock();
 
 //        methode_graphique(&primal);
         methode_du_simplexe(&primal);
 //        methode_duale_du_simplexe(&primal);
 
-        time_t end2;
-        time(&end2);
+        resolution_end = clock();
 
-        printf("\n\tLa recuperation des valeurs a commence a : %s.\n", remove_newline(ctime(&start1)));
-        printf("\tElle s'est termine a : %s, et a dure : %.2lfs.\n", remove_newline(ctime(&end1)), difftime(end1, start1));
-        printf("\n\tLa resolution a commence a : %s.\n", remove_newline(ctime(&start2)));
-        printf("\tElle s'est termine a : %s, et a dure : %.2lfs.\n", remove_newline(ctime(&end2)), difftime(end2, start2));
+        printf("\n\tDuree de l'input: %fs\n", convert_to_seconds(input_end, input_start));
+        printf("\n\tDuree de la resolution: %fs\n", convert_to_seconds(resolution_end, resolution_start));
+
+//        printf("\n\tLa recuperation des valeurs a commence a : %s.\n", remove_newline(ctime(&start1)));
+//        printf("\tElle s'est termine a : %s, et a dure : %.2lfs.\n", remove_newline(ctime(&end1)), difftime(end1, start1));
+//        printf("\n\tLa resolution a commence a : %s.\n", remove_newline(ctime(&start2)));
+//        printf("\tElle s'est termine a : %s, et a dure : %.2lfs.\n", remove_newline(ctime(&end2)), difftime(end2, start2));
 
 
 //        graphique(&primal);

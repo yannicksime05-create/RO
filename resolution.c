@@ -416,7 +416,11 @@ void methode_du_simplexe(Programme_Lineaire *p) {
         ++iteration;
     }while( !condition_arret(p->objectif, p->columns) );
 
-//    sort(solutions, p->columns);
+//    sort(solutions, old_ncolumns);
+//    for(int i = 0; i < old_ncolumns; i++) {
+//        printf("\t\tx%d = %.2f\n", solutions[i].column+1, p->b[solutions[i].row]);
+//    }
+
     printf("\n\tLes solutions sont :\n");
     for(int i = 0; i < old_ncolumns; i++) {
         printf("\t\tx%d = %.2f\n", solutions[i].column+1, (solutions[i].row < 0) ? 0.0f : p->b[solutions[i].row]);
