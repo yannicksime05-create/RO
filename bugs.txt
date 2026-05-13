@@ -1,0 +1,16 @@
+Lundi, 11/05/2026
+
+Si on entre une valeur suivie de '*' (ou juste '*' après avoir entré une valeur) lorsque l'ordinateur demande un des coefficients de la fonction objectif :
+Ex:
+	Entrez le coefficient de x1 dans la fonction objectif : 5*
+ou
+	Entrez le coefficient de x1 dans la fonction objectif : 5
+	Entrez le coefficient de x2 dans la fonction objectif : *
+
+
+Le programme ne demande pas les coefficients, et pars directement à la ligne :
+	Y a-t-il des modifications que vous souhaiteriez apporter ? y (Oui) / n (Non) :
+
+Et la valeur précédemment entrée est utilisée comme coefficient pour les autres variables.
+
+Sime K. Yannick
