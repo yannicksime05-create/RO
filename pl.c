@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-//#include <ctype.h>
+#include <stdbool.h>
+#include <string.h>
+#include <errno.h>
 #include "pl.h"
 
 /**
@@ -82,6 +84,21 @@ float *ocoeffs(int n) {
     puts("\n\t-----------------");
 
     return c;
+}
+
+Programme_Lineaire *create() {
+    Programme_Lineaire *p = malloc(sizeof(Programme_Lineaire));
+    if(!p) {
+        fprintf(stderr, "Impossible de trouver l'espace memoire pour stocker le programme. Code d'erreur: %d\n%s\n", errno, strerror(errno));
+        return NULL;
+    }
+
+    p->rows = p->columns = 0;
+    p->objectif = NULL;
+    p->contraintes = NULL;
+    p->b = NULL;
+
+    return p;
 }
 
 void affichage_de_z(const Programme_Lineaire *p) {
@@ -248,37 +265,190 @@ void gestion_des_contraintes(Programme_Lineaire *p) {
 }
 
 
-//Programme_Lineaire *pl_apartir_dun_fichier(const char *file) {
-//    FILE *f = fopen(file, "r");
-//    if(!f) {
-//        printf("Impossible d'ouvrir le fichier : %s !!!\n", file);
-//        exit(EXIT_FAILURE);
-//    }
-//
-//    //
-//    char type = getc(f);
-//
-//    char c = getc(f);
-//    if(c != ':') {
-//        printf("Erreur : ");
-//        return NULL;
-//    }
-//
-//    do{
-//        c = getc(f);
-//    }
-//    while( isspace(c) && c != EOF );
-//    if(c != '[') {
-//        printf("Erreur : ");
-//        return NULL;
-//    }
-//
-//    float x;
-//    fscanf(f, "%f", &x);
-//
-//    return NULL;
-//}
+//begin: m,      n
+//^      ^       ^
+//i = 1, i = 2,  i = 3
+void mn_apartir_du_fichier(const int i, const char *tmp, Programme_Lineaire *p) {
+    if(i == 2) {
+        p->rows = atoi(tmp);
+//        printf("rows = %d\n", p->rows);
+    }
+    else if(i == 3) {
+        p->columns = atoi(tmp);
+    }
+}
 
+//z:     c1,   , ... ,    n
+//^      ^                ^
+//i = 1, i = 2 , ... ,    i = n+1
+bool fonction_objectif_apartir_du_fichier(const int i, const char *tmp, Programme_Lineaire *p) {
+    if(i == 1) {
+        p->type = tmp[0] == 'z' ? 'm' : 'M';
+//        printf("type = %s\n", p->type == 'm' ? "min" : "max");
+    }
+    else if(i-1 <= p->columns) {
+        if(!p->objectif) {
+            p->objectif = calloc(p->columns, sizeof(float));
+            if(!p->objectif) {
+                fprintf(stderr, "Code d'erreur: %d\n%s\n", errno, strerror(errno));
+                return false;
+            }
+        }
+
+        p->objectif[i-2] = atof(tmp);
+//                    strtof();
+//                    strtod();
+    }
+
+    return true;
+}
+
+//c:        a11,    a12,   ... ,    a1n,        (<, >, =),  b1
+//^         ^       ^               ^           ^           ^
+//i = 1,    i = 2,  i = 3, ... ,    i = n+1,    i = n+2,    i = n+3
+bool contrainte_apartir_du_fichier(const int lineno, const int i, const char *tmp, Programme_Lineaire *p) {
+    if(i == 1) return true;
+
+    if(!p->contraintes) {
+        p->contraintes = calloc(p->rows, sizeof(Contrainte));
+        if(!p->contraintes) {
+            fprintf(stderr, "Impossible de stocker %d contraintes. Code d'erreur: %d\n%s\n", p->rows, errno, strerror(errno));
+            return false;
+        }
+    }
+
+    if(!p->contraintes[lineno-3].coeffs) {
+        p->contraintes[lineno-3].coeffs = calloc(p->columns, sizeof(float));
+        if(!p->contraintes[lineno-3].coeffs) {
+            fprintf(stderr, "Impossible de stocker les coefficients de la contrainte n°%d. Code d'erreur: %d\n%s\n", lineno-2, errno, strerror(errno));
+            return false;
+        }
+    }
+
+    if(i-1 == p->columns+2 && !p->b) {
+        p->b = calloc(p->rows, sizeof(float));
+        if(!p->b) {
+            fprintf(stderr, "Impossible de stocker le cote droit de la contrainte n°%d. Code d'erreur: %d\n%s\n", lineno-2, errno, strerror(errno));
+            return false;
+        }
+    }
+
+//            printf("contrainte n°%d, coeff[%d] = %lf\n", lineno-2, i-2, p->contraintes[lineno-3].coeffs[i-2]);
+    if(i-1 <= p->columns)           p->contraintes[lineno-3].coeffs[i-2] = atof(tmp);
+    else if(i-1 == p->columns + 1)  p->contraintes[lineno-3].type = tmp[strlen(tmp) - 1];
+    else if(i-1 == p->columns + 2)  p->b[lineno-3] = atof(tmp);
+
+    return true;
+}
+
+//syntaxe:
+//begin: m, n
+//z: c1, c2, ... , cn
+//c: a11, a12, ... , a1n, (<, >, =), b1
+//.
+//.
+//.
+//c: am1, am2, ... , amn, (<, >, =), bm
+//end:
+Programme_Lineaire *pl_apartir_dun_fichier(const char *filename) {
+    FILE *f = fopen(filename, "r");
+    if(!f) {
+        fprintf(stderr, "\n\tImpossible d'ouvrir le fichier : %s\n", filename);
+        return NULL;
+    }
+
+    Programme_Lineaire *p = create();
+    if(!p) {
+        fclose(f);
+        f = NULL;
+        return NULL;
+    }
+
+    char *line = NULL, *tmp = NULL;
+    bool error = false;
+    int lineno = 1, i;
+    size_t n;
+    while( getline(&line, &n, f) != -1 && strcmp(line, "end:\n") != 0 ) {
+        line[strcspn(line, "\n")] = 0;
+//        printf("lineno: %d, line: \"%s\", n = %ld\n", lineno, line, n);
+
+        i = 1;
+        tmp = strtok(line, ":");
+        while(tmp) {
+//            printf("tmp = %s\n", tmp);
+
+            //on est sur la ligne "begin: m, n"
+            if(lineno == 1) {
+                mn_apartir_du_fichier(i, tmp, p);
+            }
+            //on est sur la ligne "z: c1, ..., cn"
+            else if( lineno == 2 && !fonction_objectif_apartir_du_fichier(i, tmp, p) ) {
+                error = true;
+                break;
+            }
+            //c: a11, a12, ... , a1n, (<, >, =), b1
+            else if( lineno > 2 && !contrainte_apartir_du_fichier(lineno, i, tmp, p) ) {
+                error = true;
+                break;
+            }
+
+            tmp = strtok(NULL, " ,");
+            i++;
+        }
+
+        if(error) break;
+        lineno++;
+    }
+    tmp = NULL;
+    //A ce niveau, on est censé avoir : line = "end"
+//    line[strcspn(line, "\n")] = 0;
+//    printf("Apres la boucle\nlineno: %d, line: \"%s\", n = %ld\n", lineno, line, n);
+    free(line);
+    line = NULL;
+    fclose(f);
+    f = NULL;
+
+    if(error) {
+        if(p->b)                free(p->b);
+        else if(p->objectif)    free(p->objectif);
+        else if(p->contraintes) {
+            for(int i = 0; i < p->rows; i++) {
+                if(p->contraintes[i].coeffs) {
+                    free(p->contraintes[i].coeffs);
+                    p->contraintes[i].coeffs = NULL;
+                }
+            }
+            free(p->contraintes);
+        }
+
+        p->objectif = NULL;
+        p->b = NULL;
+        p->contraintes = NULL;
+
+        free(p);
+        p = NULL;
+    }
+
+    return p;
+}
+
+/**
+*   @brief Cette fonction est censée enregistrer les résultats dans le fichier ayant
+*   servi à créer le pl.
+*   Le problème ? Je ne sais pas encore comment elle est censée le faire donc on la laisse d'abord vide.
+*/
+void save_to_file(const char *filename) {
+//    FILE *f = fopen(filename, "a+");
+//    if(!f) {
+//        fprintf(stderr, "\n\tImpossible d'ouvrire le fichier : %s\n", filename);
+//        return;
+//    }
+//
+//    fseek(f, 0, SEEK_END);
+//
+//    long t = ftell(f);
+//    fclose(f);
+}
 
 void clean(Programme_Lineaire *p) {
     //Suppression du tableau contenant les contraintes.
@@ -296,4 +466,7 @@ void clean(Programme_Lineaire *p) {
     //Suppression du tableau contenant le coté droit des contraintes.
     free(p->b);
     p->b = NULL;
+
+    free(p);
+    p = NULL;
 }

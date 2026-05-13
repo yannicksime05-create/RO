@@ -1,13 +1,11 @@
 #include <stdio.h>
 #include <stdbool.h>
-#include <time.h>
-#include <string.h>
 #include "pl.h"
 #include "resolution.h"
 
-bool start() {
+bool pstart() {
     char c;
-    puts("\n\t\t\tSalut, je m'appelle sky, votre Assistant de Resolution de Programme Lineaire (ARPL)");
+    puts("\n\t\t\t\tSalut, je m'appelle sky, votre Assistant de Resolution de Programme Lineaire (ARPL)");
     puts("\n\tAvant de continuer, petite information :");
     puts("\n\t\t1. Je ne vous demanderai pas de contraintes sur les variables car j'ai ete programme pour supposer qu'elles sont toujours toutes soumises à des contraintes de non-negativite.");
     do{
@@ -19,85 +17,62 @@ bool start() {
     return c == 'y';
 }
 
-//char *remove_newline(char *s) {
-//    s[strcspn(s, "\n")] = 0;
-//
-//    return s;
-//}
 
-double convert_to_seconds(const clock_t end, const clock_t start) {
-   return ( (double) (end - start) ) / CLOCKS_PER_SEC;
-}
+int main(int argc, char *argv[]) {
+    clock_t start, input_start, end, input_end;
+    Programme_Lineaire *p = NULL;
+    char *filename = NULL;
+    bool cmd = false;
 
+    if(argc == 2) {
+        filename = argv[1];
+        printf("\n\tFichier trouve : %s\n", filename);
+        printf("\tExtraction du programme a partir du fichier...");
 
-int main(void) {
-//    if(argc == 2) {
-//        File *file = fopen(argv[1], "r");
-//        if(!file) {
-//            printf("Impossible d'ouvrir le fichier : %s", argv[1]);
-//            return -1;
-//        }
-//
-//        pl_apartir_dun_fichier(file);
-//
-//    }
+        input_start = clock();
+        p = pl_apartir_dun_fichier(filename);
+        input_end = clock();
+        if(!p) {
+            fprintf(stderr, "Impossible de creer le programme a partir du fichier fourni.\n");
+            return -1;
+        }
 
-    if( start() ) {
-        puts("\n");
-        Programme_Lineaire primal = { 0 };
+        printf("\t\tTermine. Temps mis : %fs\n", convert_to_seconds(input_end, input_start));
+    }
+    else {
+        cmd = true;
+        puts("\n\tAucun fichier trouve dans la liste des arguments.\n\tBasculement en mode console...\n");
+        if( !pstart() )  return -1;
 
-        clock_t input_start, input_end;
+        p = create();
+
         input_start = clock();
 
-        gestion_du_type_de_pl(&primal);
-        printf("\tVous souhaitez donc resoudre un probleme de %s.\n", (primal.type == 'm') ? "minimisation" : "Maximisation");
-        gestion_de_la_fonction_objectif(&primal);
+        gestion_du_type_de_pl(p);
+        printf("\tVous souhaitez donc resoudre un probleme de %s.\n", (p->type == 'm') ? "minimisation" : "Maximisation");
+        gestion_de_la_fonction_objectif(p);
         puts("\n\n\t-----------------");
-        gestion_des_contraintes(&primal);
+        gestion_des_contraintes(p);
 
         input_end = clock();
-
-        puts("\n\n\tVous souhaitez donc resoudre le PL suivant :");
-        affichage_du_pl(&primal);
-
-        clock_t resolution_start, resolution_end;
-        resolution_start = clock();
-
-//        methode_graphique(&primal);
-        methode_du_simplexe(&primal);
-//        methode_duale_du_simplexe(&primal);
-
-        resolution_end = clock();
-
-        printf("\n\tDuree de l'input: %fs\n", convert_to_seconds(input_end, input_start));
-        printf("\n\tDuree de la resolution: %fs\n", convert_to_seconds(resolution_end, resolution_start));
-
-//        printf("\n\tLa recuperation des valeurs a commence a : %s.\n", remove_newline(ctime(&start1)));
-//        printf("\tElle s'est termine a : %s, et a dure : %.2lfs.\n", remove_newline(ctime(&end1)), difftime(end1, start1));
-//        printf("\n\tLa resolution a commence a : %s.\n", remove_newline(ctime(&start2)));
-//        printf("\tElle s'est termine a : %s, et a dure : %.2lfs.\n", remove_newline(ctime(&end2)), difftime(end2, start2));
-
-
-//        graphique(&primal);
-
-//        //M = 77, m = 109, 109 - 77 = 32
-//        Programme_Lineaire dual;
-//        dual.objectif = primal.b;
-//        /*Le but de cette partie étant uniquement de tester l'affichage du dual, nous n'avons pas besoin de
-//            réellement transposer la matrice des contraintes du primal, juste de changer la façon dont on y accède dans une boucle.
-//
-//          Mais peut-être plus tard faudra t-il vraiment calculer cette transposée...
-//        */
-//        dual.contraintes = primal.contraintes;
-//        dual.b = primal.objectif;
-//        dual.rows = primal.columns;
-//        dual.columns = primal.rows;
-//        dual.type = (primal.type == 'm') ? 'M' : 'm';
-
-
-
-        clean(&primal);
     }
 
+    puts("\n\n\tVous souhaitez donc resoudre le PL suivant :");
+    affichage_du_pl(p);
+
+    start = clock();
+//    methode_graphique(p);
+    methode_du_simplexe(p);
+//    methode_duale_du_simplexe(p);
+    end = clock();
+
+    if(cmd) printf("\n\tDuree de l'input: %fs\n", convert_to_seconds(input_end, input_start));
+//    else    save_to_file(filename);
+
+    printf("\n\tDuree de la resolution: %fs\n", convert_to_seconds(end, start));
+
+
+    clean(p);
+    p = NULL;
     return 0;
 }

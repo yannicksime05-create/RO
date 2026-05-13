@@ -2,7 +2,7 @@
 #define PL_H
 
 /**
-*   Cette structure permet de représenter une contrainte dans un programme linéaire.
+*   @brief Cette structure permet de représenter une contrainte dans un programme linéaire.
 */
 typedef struct Contrainte {
     /**
@@ -70,7 +70,9 @@ typedef struct Programme_Lineaire {
     char type;
 } Programme_Lineaire;
 
-Programme_Lineaire *pl_apartir_dun_fichier(const char *file);
+Programme_Lineaire *pl_apartir_dun_fichier(const char *filename);
+Programme_Lineaire *create();
+void save_to_file(const char *filename);
 void gestion_du_type_de_pl(Programme_Lineaire *p);
 void gestion_de_la_fonction_objectif(Programme_Lineaire *p);
 void gestion_des_contraintes(Programme_Lineaire *p);

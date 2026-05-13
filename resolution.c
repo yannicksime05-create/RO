@@ -192,35 +192,78 @@ void methode_graphique(const Programme_Lineaire *p) {
     }
 }
 
+double convert_to_seconds(const clock_t end, const clock_t start) {
+   return ( (double) (end - start) ) / CLOCKS_PER_SEC;
+}
 
+int compare(const void *a, const void *b) {
+//    X *c = (X *)a;
+//    X *d = (X *)b;
+//    return (c->column - d->column);
+
+    return ( ((X*)a)->column - ((X*)b)->column );
+}
+
+//FIXME!!
 void sort(X *solutions, const int size) {
+    clock_t start = clock();
+
+//    for(int i = 0; i < size; i++) if(solutions[i].column == -1) solutions[i].column = 0;
+
+    qsort(solutions, size, sizeof(*solutions), compare);
+
+    for(int i = 0; i < size; i++) solutions[i].column = i+1;
+    clock_t end = clock();
+    printf("Temps de tri : %f\n", convert_to_seconds(end, start));
+}
+
+void sort3(X *solutions, const int size) {
+    clock_t start = clock();
+
     int c;
     X tmp;
 
     for(int i = 0; i < size; i++) {
-        c = solutions[i].column;
+        for(int j = 0; j < size; j++) {
+            c = solutions[j].column;
+            if(c == -1) c = solutions[j].column = 0;
 
-        if(c >= 0) {
-            tmp = solutions[c];
-            solutions[c] = solutions[i];
-            solutions[i] = tmp;
-        }
-        else {
-            solutions[i].column = i;
+            if(c == i) {
+                tmp = solutions[i];
+                solutions[i] = solutions[j];
+                solutions[j] = tmp;
+                break;
+            }
         }
     }
+
+    for(int i = 0; i < size; i++) solutions[i].column = i+1;
+    clock_t end = clock();
+    printf("Temps de tri : %f\n", convert_to_seconds(end, start));
 }
+
+//int partition(X *solutions, const int left, const int right) {
+//    return 0;
+//}
+//
+//void sort2(X *solutions, const int left, const int right) {
+//    if(left < right) {
+//        int pivot = partition(solutions, left, right);
+//        sort2(solutions, left, pivot - 1);
+//        sort2(solutions, pivot + 1, right);
+//    }
+//}
 
 
 /**
 *   Cette fonction renvoie l'indice de l'élément le plus négatif dans le tableau.
 */
-int min(const float *b, const int size) {
+int min(const float *arr, const int size) {
     int l = 0, r = size - 1;
 
     while(l < r) {
-        if(b[l] < b[r])      r--;
-        else if(b[l] > b[r]) l++;
+        if(arr[l] < arr[r])      r--;
+        else if(arr[l] > arr[r]) l++;
         else {
             l++;
             r--;
@@ -316,17 +359,9 @@ void changement_de_base(Programme_Lineaire *p, X *solutions, const int in_variab
 }
 
 
-//int forme_standard_simplexe(Programme_Lineaire *p, const int i) {
-//    if(p->contraintes[i].type == '>') {
-//        p->contraintes[i].type = '=';
-//        return 2;
-//    }
-//    else p->contraintes[i].type = '=';
-//
-//    return 1;
-//}
-
 void transformation_avant_simplexe(Programme_Lineaire *p) {
+    clock_t start = clock();
+
     short n_columns_to_add = 0;
     for(int i = 0; i < p->rows; i++) {
         if(p->contraintes[i].type == '>') n_columns_to_add += 2;
@@ -367,6 +402,9 @@ void transformation_avant_simplexe(Programme_Lineaire *p) {
     }
 
     p->columns = total_of_columns;
+
+    clock_t end = clock();
+    printf("\n\tDuree de la transformation : %fs\n", convert_to_seconds(end, start));
 }
 
 int indice_variable_sortante_simplexe(const float *b, const Contrainte *contraintes, const int row, const int in_variable_index) {
@@ -416,14 +454,10 @@ void methode_du_simplexe(Programme_Lineaire *p) {
         ++iteration;
     }while( !condition_arret(p->objectif, p->columns) );
 
-//    sort(solutions, old_ncolumns);
-//    for(int i = 0; i < old_ncolumns; i++) {
-//        printf("\t\tx%d = %.2f\n", solutions[i].column+1, p->b[solutions[i].row]);
-//    }
-
+    sort3(solutions, old_ncolumns);
     printf("\n\tLes solutions sont :\n");
     for(int i = 0; i < old_ncolumns; i++) {
-        printf("\t\tx%d = %.2f\n", solutions[i].column+1, (solutions[i].row < 0) ? 0.0f : p->b[solutions[i].row]);
+        printf("\t\tx%d = %.2f\n", solutions[i].column, (solutions[i].row < 0) ? 0.0f : p->b[solutions[i].row]);
     }
 
     free(solutions);
@@ -495,12 +529,12 @@ int indice_variable_entrante_dual_du_simplexe(const Programme_Lineaire *p, const
     int index = 0;
     float cj, arj, ratio, min_ratio = -1.0f;
     for(int i = 0; i < p->columns; i++) {
-        cj = p->objectif[i];
-        //si ce coefficient est 0, alors il appartient à une variable qui est dans la base.
-        if(cj == 0) continue;
-
         arj = p->contraintes[out_variable_index].coeffs[i];
         if(arj >= 0) continue;
+
+        //si ce coefficient est 0, alors il appartient à une variable qui est dans la base.
+        cj = p->objectif[i];
+        if(cj == 0) continue;
 
         ratio = fabs(cj / arj);
         if(min_ratio < 0 || ratio < min_ratio) {
@@ -554,10 +588,10 @@ void methode_duale_du_simplexe(Programme_Lineaire *p) {
         ++iteration;
     }while( !condition_arret(p->b, p->rows) );
 
-//    sort(solutions, old_ncolumns);
+    sort3(solutions, old_ncolumns);
     printf("\n\tLes solutions sont :\n");
     for(int i = 0; i < old_ncolumns; i++) {
-        printf("\t\tx%d = %.2f\n", solutions[i].column+1, (solutions[i].row < 0) ? 0.0f : p->b[solutions[i].row]);
+        printf("\t\tx%d = %.2f\n", solutions[i].column, (solutions[i].row < 0) ? 0.0f : p->b[solutions[i].row]);
     }
 
     free(solutions);

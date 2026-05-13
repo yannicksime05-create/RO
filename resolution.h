@@ -2,6 +2,7 @@
 #define RESOLUTION_H
 
 #include "pl.h"
+#include <time.h>
 
 /**
 *   @brief Cette structure permet de représenter un point dans un repère orthonormé (O, x, y).
@@ -32,6 +33,8 @@ typedef struct X {
 
 //    float value;
 } X;
+
+double convert_to_seconds(const clock_t end, const clock_t start);
 
 void methode_graphique(const Programme_Lineaire *p);
 void transformation_avant_simplexe(Programme_Lineaire *p);
