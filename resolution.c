@@ -208,7 +208,9 @@ int compare(const void *a, const void *b) {
 void sort(X *solutions, const int size) {
     clock_t start = clock();
 
-//    for(int i = 0; i < size; i++) if(solutions[i].column == -1) solutions[i].column = 0;
+    for(int i = 0; i < size; i++) {
+        if(solutions[i].column == -1) solutions[i].column = 0;
+    }
 
     qsort(solutions, size, sizeof(*solutions), compare);
 
@@ -242,8 +244,27 @@ void sort3(X *solutions, const int size) {
     printf("Temps de tri : %f\n", convert_to_seconds(end, start));
 }
 
-//int partition(X *solutions, const int left, const int right) {
-//    return 0;
+//void swap(X *solutions, const int i, const int j) {
+//    X tmp = solutions[i];
+//    solutions[i] = solutions[j];
+//    solutions[j] = tmp;
+//}
+//
+//int partition(X *solutions, int left, int right) {
+//    int pi_column = solutions[left].column;
+//
+//    while(left < right) {
+//        while(solutions[left].column <= pi_column) left++;
+//
+//        while(solutions[right].column > pi_column) right--;
+//
+//        if(left < right) {
+//            swap(solutions, left, right);
+//        }
+//    }
+//
+//    swap(solutions, left, right);
+//    return left;
 //}
 //
 //void sort2(X *solutions, const int left, const int right) {
@@ -424,8 +445,7 @@ int indice_variable_sortante_simplexe(const float *b, const Contrainte *contrain
 
 /**
 */
-void methode_du_simplexe(Programme_Lineaire *p) {
-//    int old_nrows = p->rows;
+X *methode_du_simplexe(Programme_Lineaire *p) {
     int old_ncolumns = p->columns;
 
     transformation_avant_simplexe(p);
@@ -434,7 +454,7 @@ void methode_du_simplexe(Programme_Lineaire *p) {
     X *solutions = malloc(old_ncolumns * sizeof(X));
     if(!solutions) {
         printf("Error: Couldn't create the array of solutions!\n");
-        return;
+        return NULL;
     }
 
     for(int i = 0; i < old_ncolumns; i++) {
@@ -454,15 +474,20 @@ void methode_du_simplexe(Programme_Lineaire *p) {
         ++iteration;
     }while( !condition_arret(p->objectif, p->columns) );
 
+//    for(int i = 0; i < old_ncolumns; i++) {
+//        if(solutions[i].column == -1) solutions[i].column = 0;
+//    }
+
     sort3(solutions, old_ncolumns);
     printf("\n\tLes solutions sont :\n");
     for(int i = 0; i < old_ncolumns; i++) {
         printf("\t\tx%d = %.2f\n", solutions[i].column, (solutions[i].row < 0) ? 0.0f : p->b[solutions[i].row]);
     }
 
-    free(solutions);
-    solutions = NULL;
+//    free(solutions);
+//    solutions = NULL;
 
+    return solutions;
 }
 
 
@@ -559,8 +584,7 @@ int indice_variable_entrante_dual_du_simplexe(const Programme_Lineaire *p, const
 
 /**
 */
-void methode_duale_du_simplexe(Programme_Lineaire *p) {
-//    int old_nrows = p->rows;
+X *methode_duale_du_simplexe(Programme_Lineaire *p) {
     int old_ncolumns = p->columns;
 
     transformation_avant_dual_simplexe(p);
@@ -569,7 +593,7 @@ void methode_duale_du_simplexe(Programme_Lineaire *p) {
     X *solutions = malloc(old_ncolumns * sizeof(X));
     if(!solutions) {
         printf("Error: Couldn't create the array of solutions!\n");
-        return;
+        return NULL;
     }
 
     for(int i = 0; i < old_ncolumns; i++) {
@@ -594,7 +618,8 @@ void methode_duale_du_simplexe(Programme_Lineaire *p) {
         printf("\t\tx%d = %.2f\n", solutions[i].column, (solutions[i].row < 0) ? 0.0f : p->b[solutions[i].row]);
     }
 
-    free(solutions);
-    solutions = NULL;
+    return solutions;
 
+//    free(solutions);
+//    solutions = NULL;
 }

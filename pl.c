@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <errno.h>
+#include <time.h>
 #include "pl.h"
 
 /**
@@ -101,35 +102,14 @@ Programme_Lineaire *create() {
     return p;
 }
 
-void affichage_de_z(const Programme_Lineaire *p) {
-    printf("Z = ");
+
+void affichage_de_z(const Programme_Lineaire *p, FILE *f) {
+    fprintf(f, "Z = ");
     for(int i = 0; i < p->columns; ++i) {
-        printf("%f * x%d", p->objectif[i], i+1);
+        fprintf(f, "%f * x%d", p->objectif[i], i+1);
         if(i < p->columns-1)
-            printf(" + ");
+            fprintf(f, " + ");
     }
-}
-
-void affichage_des_contraintes(const Programme_Lineaire *p) {
-    for(int i = 0; i < p->rows; ++i) {
-        printf("\t\t");
-        for(int j = 0; j < p->columns; ++j) {
-            printf("%f * x%d", p->contraintes[i].coeffs[j], j+1);
-            if(j < p->columns-1)
-                printf(" + ");
-        }
-        printf(" %c %f", p->contraintes[i].type, p->b[i]);
-        printf("\n");
-    }
-}
-
-void affichage_du_pl(const Programme_Lineaire *p) {
-    printf("\t");
-    p->type == 'm' ? printf("min ") : printf("Max ");
-    affichage_de_z(p);
-    puts("\n\ts.a :");
-    affichage_des_contraintes(p);
-
 }
 
 void gestion_du_type_de_pl(Programme_Lineaire *p) {
@@ -150,7 +130,7 @@ void gestion_de_la_fonction_objectif(Programme_Lineaire *p) {
 
         //Affichage de la fonction objectif pour s'assurer que les bonnes valeurs ont été récupérées.
         printf("\n\n\tVotre fonction objectif est donc : ");
-        affichage_de_z(p);
+        affichage_de_z(p, NULL);
 
         //Gestion des modifications sur la fonction objectif.
         o_ok = char_input("\n\tY a-t-il des modifications que vous souhaiteriez apporter ? y (Oui) / n (Non) : ");
@@ -264,6 +244,41 @@ void gestion_des_contraintes(Programme_Lineaire *p) {
     }
 }
 
+void gestion_du_pl(Programme_Lineaire *p) {
+    gestion_du_type_de_pl(p);
+    printf("\tVous souhaitez donc resoudre un probleme de %s.\n", (p->type == 'm') ? "minimisation" : "Maximisation");
+    gestion_de_la_fonction_objectif(p);
+    puts("\n\n\t-----------------");
+    gestion_des_contraintes(p);
+}
+
+
+void affichage_des_contraintes(const Programme_Lineaire *p, FILE *f) {
+    for(int i = 0; i < p->rows; ++i) {
+        fprintf(f, "\t\t");
+        for(int j = 0; j < p->columns; ++j) {
+            fprintf(f, "%f * x%d", p->contraintes[i].coeffs[j], j+1);
+            if(j < p->columns-1)
+                fprintf(f, " + ");
+        }
+        fprintf(f, " %c %f", p->contraintes[i].type, p->b[i]);
+        fprintf(f, "\n");
+    }
+}
+
+void affichage_du_pl(const Programme_Lineaire *p, FILE *outputfile) {
+    FILE *f = outputfile;
+    if(!f) f = stdout;
+
+    fprintf(f, "\t");
+    fprintf(f, p->type == 'm' ? "min " : "Max ");
+
+    affichage_de_z(p, f);
+    fputs("\n\ts.a :\n", f);
+    affichage_des_contraintes(p, f);
+
+}
+
 
 //begin: m,      n
 //^      ^       ^
@@ -275,6 +290,7 @@ void mn_apartir_du_fichier(const int i, const char *tmp, Programme_Lineaire *p) 
     }
     else if(i == 3) {
         p->columns = atoi(tmp);
+//        printf("columns = %d\n", p->columns);
     }
 }
 
@@ -432,22 +448,33 @@ Programme_Lineaire *pl_apartir_dun_fichier(const char *filename) {
     return p;
 }
 
-/**
-*   @brief Cette fonction est censée enregistrer les résultats dans le fichier ayant
-*   servi à créer le pl.
-*   Le problème ? Je ne sais pas encore comment elle est censée le faire donc on la laisse d'abord vide.
-*/
-void save_to_file(const char *filename) {
-//    FILE *f = fopen(filename, "a+");
-//    if(!f) {
-//        fprintf(stderr, "\n\tImpossible d'ouvrire le fichier : %s\n", filename);
-//        return;
-//    }
-//
-//    fseek(f, 0, SEEK_END);
-//
-//    long t = ftell(f);
-//    fclose(f);
+
+void save_to_file(const char *filename, const Programme_Lineaire *p, const X *solutions) {
+    FILE *f = fopen(filename, "a+");
+    if(!f) {
+        fprintf(stderr, "\n\tImpossible d'ouvrir le fichier : %s\n", filename);
+        return;
+    }
+    fseek(f, 0, SEEK_END);
+
+    if(solutions) {
+        fputs("\n\tLes solutions sont :\n\n", f);
+        for(int i = 0; i < p->columns - p->rows; i++) {
+            fprintf(f, "\t\tx%d = %f\n", solutions[i].column, (solutions[i].row < 0) ? 0.0f : p->b[solutions[i].row]);
+        }
+        fputs("\n\t\t=============================================================================", f);
+    }
+    else {
+        time_t now = time(NULL);
+        fputs("\n\n\n\t\t=============================================================================\n\n", f);
+        fprintf(f, "\t\t\t\t\t\t\tResolu le : %s\n", ctime(&now));
+        fputs("\t\t\t\t\t====================================================\n", f);
+        fputs("\n\tVous souhaitiez resoudre le PL suivant :\n\n", f);
+        affichage_du_pl(p, f);
+        fputs("\n\t\t\t\t\t====================================================\n", f);
+    }
+
+    fclose(f);
 }
 
 void clean(Programme_Lineaire *p) {

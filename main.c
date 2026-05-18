@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
 #include "pl.h"
 #include "resolution.h"
@@ -22,6 +23,7 @@ int main(int argc, char *argv[]) {
     clock_t start, input_start, end, input_end;
     Programme_Lineaire *p = NULL;
     char *filename = NULL;
+    X *solutions = NULL;
     bool cmd = false;
 
     if(argc == 2) {
@@ -38,41 +40,39 @@ int main(int argc, char *argv[]) {
         }
 
         printf("\t\tTermine. Temps mis : %fs\n", convert_to_seconds(input_end, input_start));
+        save_to_file(filename, p, NULL);
     }
     else {
         cmd = true;
         puts("\n\tAucun fichier trouve dans la liste des arguments.\n\tBasculement en mode console...\n");
-        if( !pstart() )  return -1;
 
+        if( !pstart() )  return -1;
         p = create();
 
         input_start = clock();
-
-        gestion_du_type_de_pl(p);
-        printf("\tVous souhaitez donc resoudre un probleme de %s.\n", (p->type == 'm') ? "minimisation" : "Maximisation");
-        gestion_de_la_fonction_objectif(p);
-        puts("\n\n\t-----------------");
-        gestion_des_contraintes(p);
-
+        gestion_du_pl(p);
         input_end = clock();
     }
 
     puts("\n\n\tVous souhaitez donc resoudre le PL suivant :");
-    affichage_du_pl(p);
+    affichage_du_pl(p, NULL);
 
     start = clock();
 //    methode_graphique(p);
-    methode_du_simplexe(p);
+    solutions = methode_du_simplexe(p);
 //    methode_duale_du_simplexe(p);
     end = clock();
 
     if(cmd) printf("\n\tDuree de l'input: %fs\n", convert_to_seconds(input_end, input_start));
-//    else    save_to_file(filename);
+    else {
+        save_to_file(filename, p, solutions);
+        printf("\n\tLes resultats ont ete enregistres dans le fichier : %s\n", filename);
+    }
 
     printf("\n\tDuree de la resolution: %fs\n", convert_to_seconds(end, start));
 
 
-    clean(p);
-    p = NULL;
+    free(solutions); solutions = NULL;
+    clean(p); p = NULL;
     return 0;
 }

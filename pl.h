@@ -1,6 +1,8 @@
 #ifndef PL_H
 #define PL_H
 
+#include <stdio.h>
+
 /**
 *   @brief Cette structure permet de représenter une contrainte dans un programme linéaire.
 */
@@ -70,13 +72,27 @@ typedef struct Programme_Lineaire {
     char type;
 } Programme_Lineaire;
 
-Programme_Lineaire *pl_apartir_dun_fichier(const char *filename);
+/** */
+typedef struct X {
+    /**
+    *   L'indice auquel se trouve la solution dans le vecteur b.
+    */
+    int row;
+
+    /**
+    *   L'indice de la variable dont on veut la solution.
+    */
+    int column;
+
+//    float value;
+} X;
+
 Programme_Lineaire *create();
-void save_to_file(const char *filename);
-void gestion_du_type_de_pl(Programme_Lineaire *p);
-void gestion_de_la_fonction_objectif(Programme_Lineaire *p);
-void gestion_des_contraintes(Programme_Lineaire *p);
-void affichage_du_pl(const Programme_Lineaire *p);
+Programme_Lineaire *pl_apartir_dun_fichier(const char *filename);
+
+void gestion_du_pl(Programme_Lineaire *p);
+void affichage_du_pl(const Programme_Lineaire *p, FILE *outputfile);
+void save_to_file(const char *filename, const Programme_Lineaire *p, const X *solutions);
 void clean(Programme_Lineaire *p);
 
 #endif // PL_H
