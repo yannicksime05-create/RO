@@ -205,41 +205,41 @@ int compare(const void *a, const void *b) {
 }
 
 //FIXME!!
-void sort(X *solutions, const int size) {
-    clock_t start = clock();
+//void sort(Solution *solutions, const int size) {
+//    clock_t start = clock();
+//
+//    for(int i = 0; i < size; i++) {
+//        if(solutions[i].column == -1) solutions[i].column = 0;
+//    }
+//
+//    qsort(solutions, size, sizeof(*solutions), compare);
+//
+//    for(int i = 0; i < size; i++) solutions[i].column = i+1;
+//    clock_t end = clock();
+//    printf("Temps de tri : %f\n", convert_to_seconds(end, start));
+//}
 
-    for(int i = 0; i < size; i++) {
-        if(solutions[i].column == -1) solutions[i].column = 0;
-    }
-
-    qsort(solutions, size, sizeof(*solutions), compare);
-
-    for(int i = 0; i < size; i++) solutions[i].column = i+1;
-    clock_t end = clock();
-    printf("Temps de tri : %f\n", convert_to_seconds(end, start));
-}
-
-void sort3(X *solutions, const int size) {
+void sort3(Solution *s) {
     clock_t start = clock();
 
     int c;
     X tmp;
 
-    for(int i = 0; i < size; i++) {
-        for(int j = 0; j < size; j++) {
-            c = solutions[j].column;
-            if(c == -1) c = solutions[j].column = 0;
+    for(int i = 0; i < s->size; i++) {
+        for(int j = 0; j < s->size; j++) {
+            c = s->arr[j].column;
+            if(c == -1) c = s->arr[j].column = 0;
 
             if(c == i) {
-                tmp = solutions[i];
-                solutions[i] = solutions[j];
-                solutions[j] = tmp;
+                tmp = s->arr[i];
+                s->arr[i] = s->arr[j];
+                s->arr[j] = tmp;
                 break;
             }
         }
     }
 
-    for(int i = 0; i < size; i++) solutions[i].column = i+1;
+    for(int i = 0; i < s->size; i++) s->arr[i].column = i+1;
     clock_t end = clock();
     printf("Temps de tri : %f\n", convert_to_seconds(end, start));
 }
@@ -274,6 +274,17 @@ void sort3(X *solutions, const int size) {
 //        sort2(solutions, pivot + 1, right);
 //    }
 //}
+
+void set_value(Solution *s, const float *b) {
+    for(int i = 0; i < s->size; ++i) s->arr[i].value = b[s->arr[i].row];
+}
+
+void print_solutions(const Solution *s) {
+    printf("\n\tLes solutions sont :\n");
+    for(int i = 0; i < s->size; ++i) {
+        printf("\t\tx%d = %.2f\n", s->arr[i].column, s->arr[i].value);
+    }
+}
 
 
 /**
@@ -313,12 +324,13 @@ bool condition_arret(const float *arr, const int size) {
 
 /**
 */
-void changement_de_base(Programme_Lineaire *p, X *solutions, const int in_variable_index, const int out_variable_index, const int old_ncolumns) {
+void changement_de_base(Programme_Lineaire *p, Solution *solutions, const int in_variable_index, const int out_variable_index) {
 
     /// Ces variables ne sont là que pour m'éviter d'avoir à écrire p->... à chaque fois.
     float *z = p->objectif;
     float *b = p->b;
     Contrainte *contraintes = p->contraintes;
+    int old_ncolumns = solutions->size;
 
     printf("\t\tin column = %d, out row = %d\n", in_variable_index+1, out_variable_index+1);
 
@@ -329,7 +341,7 @@ void changement_de_base(Programme_Lineaire *p, X *solutions, const int in_variab
         //modification pourrait être dangereux (out_variable_index >= old_ncolumns, sachant que la old_ncolumns est la longueur de 'solutions')
         //il nous faut donc trouver un indice qui sera toujours < old_ncolumns.
         int pos = out_variable_index >= old_ncolumns ? (out_variable_index+1) % old_ncolumns : out_variable_index;
-        solutions[pos] = (X) {out_variable_index, in_variable_index};
+        solutions->arr[pos] = (X) {out_variable_index, in_variable_index, 0.0f};
     }
 
 
@@ -356,6 +368,8 @@ void changement_de_base(Programme_Lineaire *p, X *solutions, const int in_variab
         if(i == out_variable_index) continue;
 
         column_coeff = contraintes[i].coeffs[in_variable_index];
+        if(column_coeff == 0) continue;
+
         b[i] -= column_coeff * b[out_variable_index];
         for(int j = 0; j < p->columns; ++j)
             contraintes[i].coeffs[j] -= column_coeff * contraintes[out_variable_index].coeffs[j];
@@ -445,21 +459,13 @@ int indice_variable_sortante_simplexe(const float *b, const Contrainte *contrain
 
 /**
 */
-X *methode_du_simplexe(Programme_Lineaire *p) {
+Solution *methode_du_simplexe(Programme_Lineaire *p) {
     int old_ncolumns = p->columns;
 
     transformation_avant_simplexe(p);
 
     //le nombre de x que l'on souhaite est égal au nombre de variable de décisions du problème donc : p->columns au lieu de column.
-    X *solutions = malloc(old_ncolumns * sizeof(X));
-    if(!solutions) {
-        printf("Error: Couldn't create the array of solutions!\n");
-        return NULL;
-    }
-
-    for(int i = 0; i < old_ncolumns; i++) {
-        solutions[i].row = solutions[i].column = -1;
-    }
+    Solution *s = create_solution(old_ncolumns);
 
 
     int iteration = 1;
@@ -469,25 +475,16 @@ X *methode_du_simplexe(Programme_Lineaire *p) {
         int in_variable_index = min(p->objectif, p->columns) % p->columns;
         int out_variable_index = indice_variable_sortante_simplexe(p->b, p->contraintes, p->rows, in_variable_index);
 
-        changement_de_base(p, solutions, in_variable_index, out_variable_index, old_ncolumns);
+        changement_de_base(p, s, in_variable_index, out_variable_index);
 
         ++iteration;
     }while( !condition_arret(p->objectif, p->columns) );
 
-//    for(int i = 0; i < old_ncolumns; i++) {
-//        if(solutions[i].column == -1) solutions[i].column = 0;
-//    }
+    set_value(s, p->b);
+    sort3(s);
+    print_solutions(s);
 
-    sort3(solutions, old_ncolumns);
-    printf("\n\tLes solutions sont :\n");
-    for(int i = 0; i < old_ncolumns; i++) {
-        printf("\t\tx%d = %.2f\n", solutions[i].column, (solutions[i].row < 0) ? 0.0f : p->b[solutions[i].row]);
-    }
-
-//    free(solutions);
-//    solutions = NULL;
-
-    return solutions;
+    return s;
 }
 
 
@@ -584,21 +581,13 @@ int indice_variable_entrante_dual_du_simplexe(const Programme_Lineaire *p, const
 
 /**
 */
-X *methode_duale_du_simplexe(Programme_Lineaire *p) {
+Solution *methode_duale_du_simplexe(Programme_Lineaire *p) {
     int old_ncolumns = p->columns;
 
     transformation_avant_dual_simplexe(p);
 
     //le nombre de x que l'on souhaite est égal au nombre de variable de décisions du problème donc : p->columns au lieu de column.
-    X *solutions = malloc(old_ncolumns * sizeof(X));
-    if(!solutions) {
-        printf("Error: Couldn't create the array of solutions!\n");
-        return NULL;
-    }
-
-    for(int i = 0; i < old_ncolumns; i++) {
-        solutions[i].row = solutions[i].column = -1;
-    }
+    Solution *s = create_solution(old_ncolumns);
 
     int iteration = 1;
     do{
@@ -607,19 +596,14 @@ X *methode_duale_du_simplexe(Programme_Lineaire *p) {
         int out_variable_index = min(p->b, p->rows);
         int in_variable_index = indice_variable_entrante_dual_du_simplexe(p, out_variable_index);
 
-        changement_de_base(p, solutions, in_variable_index, out_variable_index, old_ncolumns);
+        changement_de_base(p, s, in_variable_index, out_variable_index);
 
         ++iteration;
     }while( !condition_arret(p->b, p->rows) );
 
-    sort3(solutions, old_ncolumns);
-    printf("\n\tLes solutions sont :\n");
-    for(int i = 0; i < old_ncolumns; i++) {
-        printf("\t\tx%d = %.2f\n", solutions[i].column, (solutions[i].row < 0) ? 0.0f : p->b[solutions[i].row]);
-    }
+    set_value(s, p->b);
+    sort3(s);
+    print_solutions(s);
 
-    return solutions;
-
-//    free(solutions);
-//    solutions = NULL;
+    return s;
 }

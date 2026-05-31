@@ -84,15 +84,32 @@ typedef struct X {
     */
     int column;
 
-//    float value;
+    float value;
 } X;
 
+typedef struct Solution {
+    X *arr;
+    int size;
+} Solution;
+
 Programme_Lineaire *create();
+Solution *create_solution(const int size);
 Programme_Lineaire *pl_apartir_dun_fichier(const char *filename);
 
 void gestion_du_pl(Programme_Lineaire *p);
+
+/**
+*   @brief  Cette fonction affiche le pl à résoudre.
+*
+*   @param p            Le pl à afficher.
+*   @param outputfile   Le fichier dans lequel on souhaite afficher : NULL pour la sortie standard (stdout)
+*   et un pointeur valide pour un autre fichier.
+*/
 void affichage_du_pl(const Programme_Lineaire *p, FILE *outputfile);
-void save_to_file(const char *filename, const Programme_Lineaire *p, const X *solutions);
-void clean(Programme_Lineaire *p);
+
+void save_to_file(const char *filename, const Programme_Lineaire *p, const Solution *solutions);
+void clean_pl(Programme_Lineaire *p);
+void clean_solution(Solution *s);
+void clean(Programme_Lineaire *p, Solution *s);
 
 #endif // PL_H

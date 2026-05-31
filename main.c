@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
     clock_t start, input_start, end, input_end;
     Programme_Lineaire *p = NULL;
     char *filename = NULL;
-    X *solutions = NULL;
+    Solution *s = NULL;
     bool cmd = false;
 
     if(argc == 2) {
@@ -59,20 +59,19 @@ int main(int argc, char *argv[]) {
 
     start = clock();
 //    methode_graphique(p);
-    solutions = methode_du_simplexe(p);
+    s = methode_du_simplexe(p);
 //    methode_duale_du_simplexe(p);
     end = clock();
 
     if(cmd) printf("\n\tDuree de l'input: %fs\n", convert_to_seconds(input_end, input_start));
     else {
-        save_to_file(filename, p, solutions);
+        save_to_file(filename, NULL, s);
         printf("\n\tLes resultats ont ete enregistres dans le fichier : %s\n", filename);
     }
 
     printf("\n\tDuree de la resolution: %fs\n", convert_to_seconds(end, start));
 
 
-    free(solutions); solutions = NULL;
-    clean(p); p = NULL;
+    clean(p, s);
     return 0;
 }

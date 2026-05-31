@@ -102,6 +102,27 @@ Programme_Lineaire *create() {
     return p;
 }
 
+Solution *create_solution(const int size) {
+    Solution *s = malloc(sizeof(Solution));
+    if(!s) {
+        printf("Error: Couldn't create the array of solutions!\n");
+        return NULL;
+    }
+
+    s->arr = malloc(size * sizeof(X));
+    if(!s->arr) {
+        printf("Error: Couldn't create the array of solutions!\n");
+        return NULL;
+    }
+
+    s->size = size;
+    for(int i = 0; i < size; i++) {
+        s->arr[i].row = s->arr[i].column = s->arr[i].value = -1;
+    }
+
+    return s;
+}
+
 
 void affichage_de_z(const Programme_Lineaire *p, FILE *f) {
     fprintf(f, "Z = ");
@@ -323,7 +344,7 @@ bool fonction_objectif_apartir_du_fichier(const int i, const char *tmp, Programm
 //^         ^       ^               ^           ^           ^
 //i = 1,    i = 2,  i = 3, ... ,    i = n+1,    i = n+2,    i = n+3
 bool contrainte_apartir_du_fichier(const int lineno, const int i, const char *tmp, Programme_Lineaire *p) {
-    if(i == 1) return true;
+//    if(i == 1) return true;
 
     if(!p->contraintes) {
         p->contraintes = calloc(p->rows, sizeof(Contrainte));
@@ -403,7 +424,7 @@ Programme_Lineaire *pl_apartir_dun_fichier(const char *filename) {
                 break;
             }
             //c: a11, a12, ... , a1n, (<, >, =), b1
-            else if( lineno > 2 && !contrainte_apartir_du_fichier(lineno, i, tmp, p) ) {
+            else if( lineno > 2 && i > 1 && !contrainte_apartir_du_fichier(lineno, i, tmp, p) ) {
                 error = true;
                 break;
             }
@@ -449,7 +470,7 @@ Programme_Lineaire *pl_apartir_dun_fichier(const char *filename) {
 }
 
 
-void save_to_file(const char *filename, const Programme_Lineaire *p, const X *solutions) {
+void save_to_file(const char *filename, const Programme_Lineaire *p, const Solution *solutions) {
     FILE *f = fopen(filename, "a+");
     if(!f) {
         fprintf(stderr, "\n\tImpossible d'ouvrir le fichier : %s\n", filename);
@@ -459,8 +480,8 @@ void save_to_file(const char *filename, const Programme_Lineaire *p, const X *so
 
     if(solutions) {
         fputs("\n\tLes solutions sont :\n\n", f);
-        for(int i = 0; i < p->columns - p->rows; i++) {
-            fprintf(f, "\t\tx%d = %f\n", solutions[i].column, (solutions[i].row < 0) ? 0.0f : p->b[solutions[i].row]);
+        for(int i = 0; i < solutions->size; i++) {
+            fprintf(f, "\t\tx%d = %f\n", solutions->arr[i].column, solutions->arr[i].value);
         }
         fputs("\n\t\t=============================================================================", f);
     }
@@ -475,9 +496,10 @@ void save_to_file(const char *filename, const Programme_Lineaire *p, const X *so
     }
 
     fclose(f);
+    f = NULL;
 }
 
-void clean(Programme_Lineaire *p) {
+void clean_pl(Programme_Lineaire *p) {
     //Suppression du tableau contenant les contraintes.
     free(p->objectif);
     p->objectif = NULL;
@@ -496,4 +518,16 @@ void clean(Programme_Lineaire *p) {
 
     free(p);
     p = NULL;
+}
+
+void clean_solution(Solution *s) {
+    free(s->arr);
+    s->arr = NULL;
+    free(s);
+    s = NULL;
+}
+
+void clean(Programme_Lineaire *p, Solution *s) {
+    clean_pl(p);
+    clean_solution(s);
 }

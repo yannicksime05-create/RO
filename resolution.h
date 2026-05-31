@@ -20,29 +20,15 @@ typedef struct Point {
     int ord;
 } Point;
 
-//typedef struct X {
-//    /**
-//    *   L'indice auquel se trouve la solution dans le vecteur b.
-//    */
-//    int row;
-//
-//    /**
-//    *   L'indice de la variable dont on veut la solution.
-//    */
-//    int column;
-//
-////    float value;
-//} X;
-
 double convert_to_seconds(const clock_t end, const clock_t start);
 
 void methode_graphique(const Programme_Lineaire *p);
 void transformation_avant_simplexe(Programme_Lineaire *p);
-X *methode_du_simplexe(Programme_Lineaire *p);
+Solution *methode_du_simplexe(Programme_Lineaire *p);
 
-X *methode_revisee_du_simplexe(Programme_Lineaire *p);
+Solution *methode_revisee_du_simplexe(Programme_Lineaire *p);
 
 void transformation_avant_dual_simplexe(Programme_Lineaire *p);
-X *methode_duale_du_simplexe(Programme_Lineaire *p);
+Solution *methode_duale_du_simplexe(Programme_Lineaire *p);
 
 #endif // RESOLUTION_H
